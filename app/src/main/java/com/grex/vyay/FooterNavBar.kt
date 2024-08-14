@@ -15,7 +15,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.grex.vyay.ui.theme.Concealer
 import com.grex.vyay.ui.theme.Grey
-import com.grex.vyay.ui.theme.SlateBlue
+import com.grex.vyay.ui.theme.primaryColor
 
 @Composable
 fun FooterNavBar(navController: NavController) {
@@ -23,7 +23,7 @@ fun FooterNavBar(navController: NavController) {
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight(),
-        containerColor = SlateBlue,
+        containerColor = primaryColor,
         contentColor = Concealer
     ) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()

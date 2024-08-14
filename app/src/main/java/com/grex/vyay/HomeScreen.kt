@@ -20,14 +20,10 @@ import com.grex.vyay.ui.theme.DarkwingPurple
 @Composable
 fun HomeScreen(activity: MainActivity, padding: PaddingValues) {
 
-//    var smsCount by remember { mutableIntStateOf(0) }
-//    var totalSmsCount by remember { mutableIntStateOf(0) }
-//    var isPermissionGranted by remember { mutableStateOf(false) }
     val chartData = remember { mutableListOf<PieChartData>() }
     val userPreferences = UserPreferences(LocalContext.current)
     val userName = userPreferences.getUserName()
 
-    val smsPermissionHandler = activity.smsPermissionHandler
 
     val systemUiController = rememberSystemUiController()
     val unifiedBackgroundColor = DarkwingPurple

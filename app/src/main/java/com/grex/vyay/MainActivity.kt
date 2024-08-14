@@ -27,13 +27,10 @@ import com.grex.vyay.ui.theme.VyayTheme
 
 class MainActivity : ComponentActivity() {
     lateinit var smsAnalysisService: SmsAnalysisService
-    lateinit var smsPermissionHandler: SmsPermissionHandler
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        smsPermissionHandler = SmsPermissionHandler()
-        smsPermissionHandler.initialize(this)
-        smsAnalysisService = SmsAnalysisService.getInstance(smsPermissionHandler)
+        smsAnalysisService = SmsAnalysisService.getInstance()
 
         setContent {
             VyayTheme {
@@ -90,7 +87,6 @@ fun AppNavigation(activity: MainActivity) {
             composable(Screen.Splash.route) {
                 SplashScreen(
                     smsAnalysisService = activity.smsAnalysisService,
-                    smsPermissionHandler = activity.smsPermissionHandler,
                     onLoadingComplete = {
                         navController.navigate(Screen.Home.route) {
                             popUpTo(Screen.Splash.route) { inclusive = true }
