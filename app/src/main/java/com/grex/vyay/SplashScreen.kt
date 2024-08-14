@@ -1,5 +1,9 @@
 package com.grex.vyay
 
+import android.Manifest
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -13,12 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -31,27 +30,36 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.shouldShowRationale
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.grex.vyay.ui.theme.ClayBeige
-import com.grex.vyay.ui.theme.DarkwingPurple
 import com.grex.vyay.ui.theme.SlateBlue
+import com.grex.vyay.ui.theme.primaryColor
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun SplashScreen(
     smsAnalysisService: SmsAnalysisService,
-    smsPermissionHandler: SmsPermissionHandler,
     onLoadingComplete: () -> Unit
-//    checkAndRequestPermission: (() -> Unit) -> Unit
 ) {
     val context = LocalContext.current
+    val permissionState = rememberPermissionState(Manifest.permission.READ_SMS)
+    val showRationale = remember { mutableStateOf(false) }
+
     val currentProgress by smsAnalysisService.progress.collectAsState()
-    var isPermissionGranted by remember { mutableStateOf(smsPermissionHandler.checkSmsPermission()) }
+
     val systemUiController = rememberSystemUiController()
-    val unifiedBackgroundColor = DarkwingPurple
+    val unifiedBackgroundColor = primaryColor
     var showSmsPermissionDialog by remember { mutableStateOf(false) }
+
+    val smsPermissionText = "This application needs access to your SMS to generate " +
+            "expense reports. You data remains in your Phone."
+    val smsDeclinedPermissionText = "It seems you have declined SMS permission. This application needs access to your SMS to generate " +
+            "expense reports. You can enable permission from App Settings."
 
     DisposableEffect(systemUiController) {
         systemUiController.setNavigationBarColor(
@@ -65,10 +73,17 @@ fun SplashScreen(
         onDispose {}
     }
 
-    LaunchedEffect(key1 = isPermissionGranted) {
-        Log.d("INIT", "READ SMS Permission: $isPermissionGranted")
-        if (isPermissionGranted) {
-            showSmsPermissionDialog = false
+    LaunchedEffect(Unit) {
+        if (!permissionState.status.isGranted) {
+            permissionState.launchPermissionRequest()
+        }
+    }
+    LaunchedEffect(permissionState.status.shouldShowRationale) {
+        showRationale.value = permissionState.status.shouldShowRationale
+    }
+    LaunchedEffect(key1 = permissionState.status.isGranted) {
+        Log.d("INIT", "READ SMS Permission: $permissionState.status.isGranted")
+        if (permissionState.status.isGranted) {
             smsAnalysisService.startAnalysis()
             smsAnalysisService.progress.collect { progress ->
                 if (progress >= 1f) {
@@ -79,6 +94,8 @@ fun SplashScreen(
             showSmsPermissionDialog = true
         }
     }
+
+//    Compose ---------
 
     Box(
         modifier = Modifier
@@ -98,7 +115,8 @@ fun SplashScreen(
             Image(
                 painter = painterResource(id = R.mipmap.ic_launcher),
                 modifier = Modifier.size(80.dp),
-                contentDescription = "Vyay Logo")
+                contentDescription = "Vyay Logo"
+            )
             if (!showSmsPermissionDialog) {
                 LinearProgressIndicator(
                     progress = currentProgress,
@@ -110,90 +128,23 @@ fun SplashScreen(
 
 
         }
-        if (showSmsPermissionDialog) {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .padding(all = 24.dp)
-                    .align(Alignment.BottomCenter)
-            ) {
-                Text(
-                    text = "Permission to read SMS is required to generate expense reports. Without this the app won't function. All data remains within the phone.",
-                    modifier = Modifier
-                        .padding(20.dp),
-                    textAlign = TextAlign.Justify
-                )
-                Box(modifier = Modifier.fillMaxWidth()) {
-                    Button(
-                        onClick = {
-                            smsPermissionHandler.requestSmsPermission(context) {
-                                isPermissionGranted = true
-                                Log.d("INIT", "READ SMS Permission Granted!")
-                            }
-                        },
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 16.dp)
-                    ) {
-                        Text("Got it!")
+        if (!permissionState.status.isGranted) {
+            PermissionCard(
+                permissionText = smsPermissionText,
+                declinedPermissionText = smsDeclinedPermissionText,
+                isPermanentlyDeclined = showRationale.value,
+                onOkClick = {
+                    if (permissionState.status.shouldShowRationale) {
+                        permissionState.launchPermissionRequest()
+                    } else {
+                        // Open app settings
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        intent.data = Uri.fromParts("package", context.packageName, null)
+                        context.startActivity(intent)
                     }
                 }
-            }
-        }
-    }
-}
-
-//suspend fun loadProgress(updateProgress: (Float) -> Unit, onComplete: () -> Unit) {
-//    for (i in 1..100) {
-//        updateProgress(i.toFloat() / 100)
-//        delay(20.milliseconds)
-//        if (i >= 100 ) {
-//            onComplete()
-//        }
-//    }
-//}
-
-@Preview
-@Composable
-fun PermissionCard() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DarkwingPurple)
-            .padding(bottom = 32.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Card(
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            ),
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .padding(all = 24.dp)
-                .align(Alignment.BottomCenter)
-
-        ) {
-            Text(
-                text = "Permission to read SMS is required to generate expense reports. Without this the app won't function. All data remains within the phone.",
-                modifier = Modifier
-                    .padding(20.dp),
-                textAlign = TextAlign.Justify,
             )
-            Box(modifier = Modifier.fillMaxWidth()) {
-                Button(
-                    onClick = {
-                        print("Okay")
-                    },
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(bottom = 16.dp)
-                ) {
-                    Text("Got it!")
-                }
-            }
         }
     }
 }
+

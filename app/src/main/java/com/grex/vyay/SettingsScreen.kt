@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.grex.vyay.ui.theme.DarkwingPurple
+import com.grex.vyay.ui.theme.primaryColor
 
 
 @Composable
@@ -23,7 +23,7 @@ fun SettingsScreen(activity: MainActivity, padding: PaddingValues) {
     val userPreferences = remember { UserPreferences(context) }
 
     val systemUiController = rememberSystemUiController()
-    val unifiedBackgroundColor = DarkwingPurple
+    val unifiedBackgroundColor = primaryColor
     DisposableEffect(systemUiController) {
         systemUiController.setNavigationBarColor(
             color = unifiedBackgroundColor,

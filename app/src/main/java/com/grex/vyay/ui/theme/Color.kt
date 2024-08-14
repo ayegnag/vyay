@@ -29,4 +29,4 @@ val ClayBeige = Color(0XFFCBB279)
 val Concealer = Color(0XFFE1D4BB)
 val Grey = Color(0XFFEEEEEE)
 
-
+val primaryColor = DarkwingPurple

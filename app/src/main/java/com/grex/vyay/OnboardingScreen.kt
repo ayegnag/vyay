@@ -36,9 +36,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.grex.vyay.ui.theme.DarkwingPurple
 import com.grex.vyay.ui.theme.Grey
 import com.grex.vyay.ui.theme.VyayTheme
+import com.grex.vyay.ui.theme.primaryColor
 
 @Composable
 fun OnboardingScreen(
@@ -49,7 +49,7 @@ fun OnboardingScreen(
 ) {
     var userName by remember { mutableStateOf(initialUserName) }
     val systemUiController = rememberSystemUiController()
-    val unifiedBackgroundColor = DarkwingPurple
+    val unifiedBackgroundColor = primaryColor
 
     DisposableEffect(systemUiController) {
         systemUiController.setNavigationBarColor(
