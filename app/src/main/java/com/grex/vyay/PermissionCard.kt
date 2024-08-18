@@ -40,7 +40,7 @@ fun PermissionCard(
 
         Card(
             colors = CardDefaults.cardColors(
-                containerColor = Color(0XFF151222),
+                containerColor = Color(0XFF31353b), //TouchGrey
             ),
             modifier = Modifier
                 .fillMaxWidth(0.9f)

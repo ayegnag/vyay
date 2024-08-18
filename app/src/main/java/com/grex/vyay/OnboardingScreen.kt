@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -23,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -38,7 +41,8 @@ import androidx.compose.ui.unit.dp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.grex.vyay.ui.theme.Grey
 import com.grex.vyay.ui.theme.VyayTheme
-import com.grex.vyay.ui.theme.primaryColor
+import com.grex.vyay.ui.theme.backgroundPrimaryBottom
+import com.grex.vyay.ui.theme.backgroundPrimaryTop
 
 @Composable
 fun OnboardingScreen(
@@ -49,15 +53,13 @@ fun OnboardingScreen(
 ) {
     var userName by remember { mutableStateOf(initialUserName) }
     val systemUiController = rememberSystemUiController()
-    val unifiedBackgroundColor = primaryColor
-
     DisposableEffect(systemUiController) {
-        systemUiController.setNavigationBarColor(
-            color = unifiedBackgroundColor,
+        systemUiController.setStatusBarColor(
+            color = backgroundPrimaryTop,
             darkIcons = false // Set to false for light icons
         )
-        systemUiController.setStatusBarColor(
-            color = unifiedBackgroundColor,
+        systemUiController.setNavigationBarColor(
+            color = backgroundPrimaryBottom,
             darkIcons = false // Set to false for light icons
         )
         onDispose {}
@@ -65,7 +67,14 @@ fun OnboardingScreen(
 
     Box(
         modifier = Modifier
-            .background(unifiedBackgroundColor)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        backgroundPrimaryTop,
+                        backgroundPrimaryBottom
+                    )
+                )
+            )
             .fillMaxSize()
     ) {
         Image(
@@ -103,25 +112,36 @@ fun OnboardingScreen(
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = userName,
-                onValueChange = { userName = it },
-                label = { Text(
-                    "Your Name",
-                    style = TextStyle(
-                        color = Grey,
-                        textAlign = TextAlign.Start
-                    )
-                ) },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = White,
-                    unfocusedBorderColor = Grey,
-                ),
-                singleLine = true,
-                textStyle = TextStyle(color = White),
-                modifier = Modifier
-                    .background(color = Grey.copy(alpha = 0.1f))
-            )
+            Box{
+                Box(modifier = Modifier
+                    .padding(top = 8.dp)
+                    .width(280.dp)
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Grey.copy(alpha = 0.1f))
+                )
+                OutlinedTextField(
+                    value = userName,
+                    onValueChange = { userName = it },
+                    label = {
+                        Text(
+                            "Your Name",
+                            style = TextStyle(
+                                color = Grey,
+                                textAlign = TextAlign.Start
+                            )
+                        )
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = White,
+                        unfocusedBorderColor = Grey,
+                    ),
+                    singleLine = true,
+                    textStyle = TextStyle(color = White),
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                )
+            }
             Spacer(modifier = Modifier.height(16.dp))
             Button(
                 onClick = {

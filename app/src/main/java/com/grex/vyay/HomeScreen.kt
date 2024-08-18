@@ -9,13 +9,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.grex.vyay.ui.theme.DarkwingPurple
+import com.grex.vyay.ui.theme.backgroundPrimaryBottom
+import com.grex.vyay.ui.theme.backgroundPrimaryTop
 
 @Composable
 fun HomeScreen(activity: MainActivity, padding: PaddingValues) {
@@ -24,22 +25,20 @@ fun HomeScreen(activity: MainActivity, padding: PaddingValues) {
     val userPreferences = UserPreferences(LocalContext.current)
     val userName = userPreferences.getUserName()
 
-
     val systemUiController = rememberSystemUiController()
-    val unifiedBackgroundColor = DarkwingPurple
     DisposableEffect(systemUiController) {
-        systemUiController.setNavigationBarColor(
-            color = unifiedBackgroundColor,
+        systemUiController.setStatusBarColor(
+            color = backgroundPrimaryTop,
             darkIcons = false // Set to false for light icons
         )
-        systemUiController.setStatusBarColor(
-            color = unifiedBackgroundColor,
+        systemUiController.setNavigationBarColor(
+            color = backgroundPrimaryTop,
             darkIcons = false // Set to false for light icons
         )
         onDispose {}
     }
 
-    LaunchedEffect(activity) {
+//    LaunchedEffect(activity) {
 //        if (isPermissionGranted) {
 //        smsPermissionHandler.readAndStoreSms()
 //        smsCount = smsPermissionHandler.getSmsCount()
@@ -50,11 +49,18 @@ fun HomeScreen(activity: MainActivity, padding: PaddingValues) {
 //            PieChartData(value = totalSmsCount.toFloat(), color = ColumbiaBlue)
 //        ))
 //        }
-    }
+//    }
 
     Box(
         modifier = Modifier
-            .background(unifiedBackgroundColor)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        backgroundPrimaryTop,
+                        backgroundPrimaryBottom
+                    )
+                )
+            )
             .fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
@@ -99,6 +105,7 @@ fun SMSCount(count: Int, modifier: Modifier = Modifier) {
         modifier = modifier
     )
 }
+
 @Composable
 fun TotalSMSCount(count: Int, modifier: Modifier = Modifier) {
     Text(

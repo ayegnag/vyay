@@ -13,23 +13,31 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 
 class SmsAnalysisService private constructor() {
-    val applicationContext = VyayApp.instance.applicationContext
+    private val applicationContext: Context = VyayApp.instance.applicationContext
     private val serviceScope = CoroutineScope(Dispatchers.Default)
     private lateinit var activity: ComponentActivity
     private var analysisJob: Job? = null
     private var database: AppDatabase = AppDatabase.getDatabase(applicationContext)
-    private var smsDao: SmsDao = database.smsDao()
     private var totalSmsCount = 0
-    private val parser = SmsParser()
-
+    private var totalProgressSteps = 1
     private val _progress = MutableStateFlow(0f)
+    private val parser = SmsParser()
+    lateinit var expenseData: List<MonthlyTotal>
+    lateinit var incomeData: List<MonthlyTotal>
+
     val progress: StateFlow<Float> = _progress
+    var appDao: AppDao = database.appDao()
+
 
     fun startAnalysis() {
         val applicationContext = VyayApp.instance.applicationContext
+//        Should have Read SMS permission at this point, but still check for assurity
         if (ContextCompat.checkSelfPermission(
                 applicationContext,
                 android.Manifest.permission.READ_SMS
@@ -48,8 +56,9 @@ class SmsAnalysisService private constructor() {
         val totalSmsCount = getTotalSmsCount()
 
         readAndStoreSms { processedCount ->
-            val progress = processedCount.toFloat() / totalSmsCount
-            _progress.value = progress
+//            val progress = processedCount.toFloat() / totalSmsCount
+            Log.d("PROGRESS", """$processedCount / $totalSmsCount""")
+            _progress.value = processedCount.toFloat()
         }
     }
 
@@ -67,15 +76,19 @@ class SmsAnalysisService private constructor() {
             }
     }
 
-    private suspend fun readAndStoreSms(progressCallback: suspend (Int) -> Unit) {
+    private suspend fun readAndStoreSms(progressCallback: suspend (Float) -> Unit) {
         val uri = Uri.parse("content://sms/inbox")
         val projection = arrayOf("_id", "address", "body", "date")
 
         withContext(Dispatchers.IO) {
+            // Get the latest SMS date from the database
+            val latestSmsInDb = appDao.getLatestSmsDate()
+
             applicationContext.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
-                var processedCount = 0
-                totalSmsCount = 0
-                smsDao.deleteAllMessages() // Clear existing messages
+                var processedCount = 0f
+                totalSmsCount = cursor.count
+                totalProgressSteps += totalSmsCount
+                Log.d("Cursor", totalSmsCount.toString())
 
                 val idColumn = cursor.getColumnIndexOrThrow("_id")
                 val addressColumn = cursor.getColumnIndexOrThrow("address")
@@ -83,33 +96,66 @@ class SmsAnalysisService private constructor() {
                 val dateColumn = cursor.getColumnIndexOrThrow("date")
 
                 while (cursor.moveToNext()) {
-                    totalSmsCount++
-                    processedCount++
+                    val smsDate = cursor.getLong(dateColumn)
+
+                    // If we've reached SMS older than or equal to the latest in the DB, stop processing
+                    if (latestSmsInDb != null && smsDate <= latestSmsInDb) {
+                        Log.d("preSMSData", smsDate.toString())
+                        break
+                    }
+
+//                    processedCount++
+                    val currentIndex = cursor.position
+                    processedCount = (currentIndex + 1).toFloat() / cursor.count
+                    Log.d("Cursor", """${processedCount}""")
                     progressCallback(processedCount)
 
                     val address = cursor.getString(addressColumn)
-                    if (address.contains("HDFCBK")) {
+                    val supportedBankList = listOf("HDFCBK", "SBI")
+                    if (supportedBankList.any { address.contains(it, ignoreCase = true) }) {
                         val id = cursor.getInt(idColumn)
                         val body = cursor.getString(bodyColumn)
-                        val date = cursor.getLong(dateColumn)
                         val details = parser.parse(body)
-                        val smsMessage = SmsMessage(id, address, body, date)
-                        print(details)
-                        Log.d(
-                            "SMSData",
-                            "$id $address ${details.currency} ${details.amount} ${details.date} ${details.bank} ${details.transactionMode}"
+                        val smsMessage = SmsMessage(
+                            _id = id,
+                            address = address,
+                            receivedOnDate = smsDate,
+                            transactionType = details.transactionType,
+                            currency = details.currency,
+                            amount = details.amount,
+//                            from = details.,
+                            receivedAt = details.receiver,
+                            transactionMode = details.transactionMode,
+                            messageDate = details.date,
+                            body = body
                         )
 
-                        smsDao.insertMessage(smsMessage)
+                        val dateTime = epochToDateTime(smsDate)
+                        print(details)
+//                        Log.d(
+//                            "SMSData",
+//                            "$id $address $dateTime ${details.transactionType} ${details.currency} ${details.amount} ${details.date} ${details.bank} ${details.transactionMode}"
+//                        )
+
+                        appDao.insertMessage(smsMessage)
+//                        delay(10)
                     }
                 }
+                // SMS records created in DB, next to generate reports
+                generateMonthlyExpenses() {
+                    processedCount++
+                }
+                generateMonthlyIncomes() {
+                    processedCount++
+                }
+                progressCallback(processedCount)
             }
         }
     }
 
     suspend fun getSmsCount(): Int {
         return withContext(Dispatchers.IO) {
-            smsDao.getAllMessages().size
+            appDao.getAllMessages().size
         }
     }
     fun getTotalSmsCount(): Int {
@@ -126,4 +172,40 @@ class SmsAnalysisService private constructor() {
 
         return smsCount
     }
+
+    private suspend fun generateMonthlyExpenses(progressIncrement: () -> Unit) {
+        val mutableExpenseData = mutableListOf<MonthlyTotal>()
+        val totalMonthlyTotal = appDao.getMonthlyExpenses()
+        totalMonthlyTotal.forEach { monthlyTotal ->
+            mutableExpenseData.add(monthlyTotal)
+            progressIncrement()
+        }
+        expenseData = mutableExpenseData
+    }
+    private suspend fun generateMonthlyIncomes(progressIncrement: () -> Unit) {
+        val mutableIncomeData = mutableListOf<MonthlyTotal>()
+        val totalMonthlyTotal = appDao.getMonthlyIncomes()
+        totalMonthlyTotal.forEach { monthlyTotal ->
+            mutableIncomeData.add(monthlyTotal)
+            progressIncrement()
+        }
+        incomeData = mutableIncomeData
+    }
+
+    fun getMonthlyExpense(): List<MonthlyTotal> {
+        return expenseData
+    }
+    fun getMonthlyIncome(): List<MonthlyTotal> {
+        return incomeData
+    }
+
+    fun resetSmsData() {
+        appDao.deleteAllMessages() // Clear existing messages
+    }
+}
+
+fun epochToDateTime(epochMillis: Long): String {
+    val instant = Instant.ofEpochMilli(epochMillis)
+    val zonedDateTime = instant.atZone(ZoneId.systemDefault())
+    return zonedDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 }
