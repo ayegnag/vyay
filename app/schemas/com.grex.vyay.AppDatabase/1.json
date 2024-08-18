@@ -2,15 +2,15 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "b11673b6e2c2eb5495136649e5f8a290",
+    "identityHash": "af9c74eb8713e017ba3622f133f861fe",
     "entities": [
       {
         "tableName": "sms_messages",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `address` TEXT NOT NULL, `body` TEXT NOT NULL, `date` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER NOT NULL, `address` TEXT NOT NULL, `receivedOnDate` INTEGER NOT NULL, `transactionType` TEXT, `currency` TEXT, `amount` REAL, `receivedAt` TEXT, `transactionMode` TEXT, `messageDate` TEXT, `body` TEXT NOT NULL, PRIMARY KEY(`_id`))",
         "fields": [
           {
-            "fieldPath": "id",
-            "columnName": "id",
+            "fieldPath": "_id",
+            "columnName": "_id",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -21,22 +21,58 @@
             "notNull": true
           },
           {
-            "fieldPath": "body",
-            "columnName": "body",
-            "affinity": "TEXT",
+            "fieldPath": "receivedOnDate",
+            "columnName": "receivedOnDate",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "date",
-            "columnName": "date",
-            "affinity": "INTEGER",
+            "fieldPath": "transactionType",
+            "columnName": "transactionType",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "currency",
+            "columnName": "currency",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "amount",
+            "columnName": "amount",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "receivedAt",
+            "columnName": "receivedAt",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "transactionMode",
+            "columnName": "transactionMode",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "messageDate",
+            "columnName": "messageDate",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "body",
+            "columnName": "body",
+            "affinity": "TEXT",
             "notNull": true
           }
         ],
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "id"
+            "_id"
           ]
         },
         "indices": [],
@@ -46,7 +82,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b11673b6e2c2eb5495136649e5f8a290')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'af9c74eb8713e017ba3622f133f861fe')"
     ]
   }
 }

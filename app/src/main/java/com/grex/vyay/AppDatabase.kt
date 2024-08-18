@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(entities = [SmsMessage::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
-    abstract fun smsDao(): SmsDao
+    abstract fun appDao(): AppDao
 
     companion object {
         private var instance: AppDatabase? = null
@@ -17,7 +17,7 @@ abstract class AppDatabase : RoomDatabase() {
                 val newInstance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "sms_database"
+                    "app_database"
                 ).build()
                 instance = newInstance
                 newInstance

@@ -27,16 +27,18 @@ import com.grex.vyay.ui.theme.VyayTheme
 
 class MainActivity : ComponentActivity() {
     lateinit var smsAnalysisService: SmsAnalysisService
+    lateinit var settingsViewModel: SettingsViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         smsAnalysisService = SmsAnalysisService.getInstance()
+        settingsViewModel = SettingsViewModel(smsAnalysisService.appDao)
 
         setContent {
             VyayTheme {
                 // A surface container using the 'background' color from the theme
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    AppNavigation(this)
+                    AppNavigation(this, settingsViewModel)
                 }
             }
         }
@@ -48,7 +50,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AppNavigation(activity: MainActivity) {
+fun AppNavigation(activity: MainActivity, settingsViewModel: SettingsViewModel) {
     val navController = rememberNavController()
     val userPreferences = UserPreferences(LocalContext.current)
     val startDestination = if (userPreferences.getUserName().isEmpty()) Screen.Onboarding.route else Screen.Splash.route
@@ -100,8 +102,15 @@ fun AppNavigation(activity: MainActivity) {
             composable(Screen.Reports.route) {
                 ReportsScreen(activity, innerPadding)
             }
+            composable(Screen.Statements.route) {
+                StatementsScreen(activity, innerPadding)
+            }
             composable(Screen.Settings.route) {
-                SettingsScreen(activity, innerPadding)
+                SettingsScreen(
+                    activity,
+                    innerPadding,
+                    settingsViewModel
+                )
             }
         }
     }

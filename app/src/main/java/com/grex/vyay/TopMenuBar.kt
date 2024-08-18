@@ -16,7 +16,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.grex.vyay.ui.theme.Grey
-import com.grex.vyay.ui.theme.primaryColor
+import com.grex.vyay.ui.theme.backgroundPrimaryTop
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,12 +26,13 @@ fun TopMenuBar(navController: NavController) {
 
     TopAppBar(
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = primaryColor,
+            containerColor = backgroundPrimaryTop,
             titleContentColor = Grey,
         ),
         title = {
             when (currentRoute) {
                 Screen.Reports.route -> Text("Reports")
+                Screen.Statements.route -> Text("Monthly Statements")
                 Screen.Settings.route -> Text("Settings")
                 Screen.Onboarding.route -> Text("Welcome")
                 else -> Text(
