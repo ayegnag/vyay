@@ -84,6 +84,7 @@ fun SplashScreen(
     LaunchedEffect(key1 = permissionState.status.isGranted) {
         Log.d("INIT", "READ SMS Permission: $permissionState.status.isGranted")
         if (permissionState.status.isGranted) {
+            showSmsPermissionDialog = false
             smsAnalysisService.startAnalysis()
             smsAnalysisService.progress.collect { progress ->
                 if (progress >= 1f) {
@@ -126,10 +127,10 @@ fun SplashScreen(
             )
             if (!showSmsPermissionDialog) {
                 LinearProgressIndicator(
-                    progress = currentProgress,
+                    progress = { currentProgress },
                     modifier = Modifier.fillMaxWidth(),
                     color = primaryActive,
-                    trackColor = secondaryInactive
+                    trackColor = secondaryInactive,
                 )
             }
 

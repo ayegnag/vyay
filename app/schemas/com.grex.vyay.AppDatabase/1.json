@@ -2,15 +2,21 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "af9c74eb8713e017ba3622f133f861fe",
+    "identityHash": "18a1170d776eb36497f2ff785385ccd8",
     "entities": [
       {
-        "tableName": "sms_messages",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`_id` INTEGER NOT NULL, `address` TEXT NOT NULL, `receivedOnDate` INTEGER NOT NULL, `transactionType` TEXT, `currency` TEXT, `amount` REAL, `receivedAt` TEXT, `transactionMode` TEXT, `messageDate` TEXT, `body` TEXT NOT NULL, PRIMARY KEY(`_id`))",
+        "tableName": "transaction_records",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `isManual` INTEGER NOT NULL, `address` TEXT NOT NULL, `receivedOnDate` INTEGER NOT NULL, `transactionType` TEXT, `currency` TEXT, `amount` REAL, `receivedAt` TEXT, `transactionMode` TEXT, `messageDate` TEXT, `source` TEXT NOT NULL, `isTransaction` INTEGER NOT NULL, `body` TEXT NOT NULL, `tags` TEXT, `category` TEXT, PRIMARY KEY(`id`, `isManual`))",
         "fields": [
           {
-            "fieldPath": "_id",
-            "columnName": "_id",
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isManual",
+            "columnName": "isManual",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -63,16 +69,41 @@
             "notNull": false
           },
           {
+            "fieldPath": "source",
+            "columnName": "source",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isTransaction",
+            "columnName": "isTransaction",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
             "fieldPath": "body",
             "columnName": "body",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "tags",
+            "columnName": "tags",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "category",
+            "columnName": "category",
+            "affinity": "TEXT",
+            "notNull": false
           }
         ],
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "_id"
+            "id",
+            "isManual"
           ]
         },
         "indices": [],
@@ -82,7 +113,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'af9c74eb8713e017ba3622f133f861fe')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '18a1170d776eb36497f2ff785385ccd8')"
     ]
   }
 }
