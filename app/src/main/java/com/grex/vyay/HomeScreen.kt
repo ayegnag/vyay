@@ -6,7 +6,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
@@ -14,10 +22,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.grex.vyay.ui.theme.Grey
 import com.grex.vyay.ui.theme.backgroundPrimaryBottom
 import com.grex.vyay.ui.theme.backgroundPrimaryTop
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(activity: MainActivity, padding: PaddingValues) {
 
@@ -51,23 +63,49 @@ fun HomeScreen(activity: MainActivity, padding: PaddingValues) {
 //        }
 //    }
 
-    Box(
-        modifier = Modifier
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        backgroundPrimaryTop,
-                        backgroundPrimaryBottom
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = backgroundPrimaryTop,
+                    titleContentColor = Grey,
+                ),
+                title = {
+                    Text(
+                        "Vyay",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 28.sp
                     )
-                )
+                },
+                actions = {
+                    IconButton(onClick = { /* Handle menu click */ }) {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = "Menu"
+                        )
+                    }
+                },
             )
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier.padding(padding)
-        ) {
-            Greeting(userName)
+        },
+        content = { paddingValues ->
+            Box(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                backgroundPrimaryTop,
+                                backgroundPrimaryBottom
+                            )
+                        )
+                    )
+                    .fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(
+                    modifier = Modifier.padding(padding)
+                ) {
+                    Greeting(userName)
 //            if (isPermissionGranted) {
 //                Row {
 //                    TotalSMSCount(totalSmsCount)
@@ -85,8 +123,10 @@ fun HomeScreen(activity: MainActivity, padding: PaddingValues) {
 //                    Text("Request SMS Permission")
 //                }
 //            }
+                }
+            }
         }
-    }
+    )
 }
 
 

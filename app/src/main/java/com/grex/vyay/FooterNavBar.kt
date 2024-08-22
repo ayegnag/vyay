@@ -19,10 +19,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.grex.vyay.ui.theme.Copper
+import com.grex.vyay.ui.theme.Grey
 import com.grex.vyay.ui.theme.backgroundPrimaryBottom
 import com.grex.vyay.ui.theme.backgroundPrimaryTop
 import com.grex.vyay.ui.theme.primaryActive
-import com.grex.vyay.ui.theme.secondaryInactive
 
 @Composable
 fun FooterNavBar(navController: NavController) {
@@ -92,8 +92,8 @@ fun FooterNavBar(navController: NavController) {
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = primaryActive,
                     selectedTextColor = primaryActive,
-                    unselectedIconColor = secondaryInactive,
-                    unselectedTextColor = secondaryInactive,
+                    unselectedIconColor = Grey,
+                    unselectedTextColor = Grey,
                     indicatorColor = backgroundPrimaryTop
                 ),
             )

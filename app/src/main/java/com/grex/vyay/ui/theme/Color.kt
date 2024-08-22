@@ -25,9 +25,17 @@ val PowderBlue = Color(0xFF99C1DE)
 val Copper = Color(0XFFb87333)
 val CopperLight = Color(0XFFe28e3f)
 val PatinaShine = Color(0XFF8eb833)
+val SeafoamGreen = Color(0XFF2f5233)
+val LimeGreen = Color(0XFF76b947)
 val Geru = Color(0XFFb83c33)
 val CottonBlue = Color(0XFF3378b8)
 val AlertOrange = Color(0XFFe94c2b)
+val PetalRed = Color(0xFFE57373)
+val Coral = Color(0xFFe57283)
+val Indigo = Color(0xFF32083d)
+val Salmon = Color(0xFFecb596)
+val Cream = Color(0xFFfdf9f4)
+val Slate = Color(0xFF708d8d)
 
 val DeepGrey = Color(0XFF1b1e23)
 val TouchGrey = Color(0XFF31353b)
@@ -43,6 +51,7 @@ val Grey = Color(0XFFEEEEEE)
 
 val primaryColor = DeepGrey
 val primaryActive = CopperLight
+val primaryInactive = Purple40
 val secondaryColor = TouchGrey
 val secondaryActive = TouchGrey
 val secondaryInactive = PurpleGrey40

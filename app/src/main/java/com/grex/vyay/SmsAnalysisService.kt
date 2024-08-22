@@ -82,7 +82,7 @@ class SmsAnalysisService private constructor() {
 
         withContext(Dispatchers.IO) {
             // Get the latest SMS date from the database
-            val latestSmsInDb = appDao.getLatestSmsDate()
+            val latestSmsInDb = appDao.getLatestRecordDate()
 
             applicationContext.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
                 var processedCount = 0f
@@ -96,9 +96,13 @@ class SmsAnalysisService private constructor() {
                 val dateColumn = cursor.getColumnIndexOrThrow("date")
 
                 while (cursor.moveToNext()) {
-                    val smsDate = cursor.getLong(dateColumn)
+                    // Skip if SMS in unsupported
+                    val body = cursor.getString(bodyColumn)
+                    val details = parser.parse(body) ?: continue
+
 
                     // If we've reached SMS older than or equal to the latest in the DB, stop processing
+                    val smsDate = cursor.getLong(dateColumn)
                     if (latestSmsInDb != null && smsDate <= latestSmsInDb) {
                         Log.d("preSMSData", smsDate.toString())
                         break
@@ -113,21 +117,24 @@ class SmsAnalysisService private constructor() {
                     val address = cursor.getString(addressColumn)
                     val supportedBankList = listOf("HDFCBK", "SBI")
                     if (supportedBankList.any { address.contains(it, ignoreCase = true) }) {
+
                         val id = cursor.getInt(idColumn)
-                        val body = cursor.getString(bodyColumn)
-                        val details = parser.parse(body)
-                        val smsMessage = SmsMessage(
-                            _id = id,
+                        val transactionRecord = TransactionRecord(
+                            id = id,
+                            isManual = false,
                             address = address,
                             receivedOnDate = smsDate,
-                            transactionType = details.transactionType,
-                            currency = details.currency,
-                            amount = details.amount,
-//                            from = details.,
-                            receivedAt = details.receiver,
-                            transactionMode = details.transactionMode,
-                            messageDate = details.date,
-                            body = body
+                            transactionType = details?.transactionType,
+                            currency = details?.currency,
+                            amount = details?.amount,
+                            receivedAt = details?.receiver,
+                            transactionMode = details?.transactionMode,
+                            messageDate = details?.date,
+                            source = "sms",
+                            isTransaction = true,
+                            body = body,
+                            category = "",
+                            tags = ""
                         )
 
                         val dateTime = epochToDateTime(smsDate)
@@ -137,7 +144,7 @@ class SmsAnalysisService private constructor() {
 //                            "$id $address $dateTime ${details.transactionType} ${details.currency} ${details.amount} ${details.date} ${details.bank} ${details.transactionMode}"
 //                        )
 
-                        appDao.insertMessage(smsMessage)
+                        appDao.insertMessageWithModifiedTransactionType(transactionRecord)
 //                        delay(10)
                     }
                 }
@@ -155,7 +162,7 @@ class SmsAnalysisService private constructor() {
 
     suspend fun getSmsCount(): Int {
         return withContext(Dispatchers.IO) {
-            appDao.getAllMessages().size
+            appDao.getAllRecords().size
         }
     }
     fun getTotalSmsCount(): Int {
@@ -198,9 +205,19 @@ class SmsAnalysisService private constructor() {
     fun getMonthlyIncome(): List<MonthlyTotal> {
         return incomeData
     }
+    suspend fun fetchMonthlyExpense(): List<MonthlyTotal> {
+        val totalMonthlyTotal = appDao.getMonthlyExpenses()
+        expenseData = totalMonthlyTotal
+        return expenseData
+    }
+    suspend fun fetchMonthlyIncome(): List<MonthlyTotal> {
+        val totalMonthlyTotal = appDao.getMonthlyIncomes()
+        incomeData = totalMonthlyTotal
+        return incomeData
+    }
 
     fun resetSmsData() {
-        appDao.deleteAllMessages() // Clear existing messages
+        appDao.deleteAllRecords() // Clear existing messages
     }
 }
 

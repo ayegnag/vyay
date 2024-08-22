@@ -1,6 +1,5 @@
 package com.grex.vyay
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -17,10 +16,11 @@ data class SmsMessage(
     val receivedAt: String?,
     val transactionMode: String?,
     val messageDate: String?,
+    val source: String, // sms, manual
     val body: String,
 )
 
-data class MonthlyTotal(
-    val month: String,
-    @ColumnInfo(name = "total_amount") val totalAmount: Float
-)
+//data class MonthlyTotal(
+//    val month: String,
+//    @ColumnInfo(name = "total_amount") val totalAmount: Float
+//)
