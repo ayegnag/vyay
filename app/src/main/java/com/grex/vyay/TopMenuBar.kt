@@ -15,8 +15,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.grex.vyay.ui.theme.Grey
-import com.grex.vyay.ui.theme.backgroundPrimaryTop
+import com.grex.vyay.ui.theme.CustomColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,8 +25,8 @@ fun TopMenuBar(navController: NavController) {
 
     TopAppBar(
         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-            containerColor = backgroundPrimaryTop,
-            titleContentColor = Grey,
+            containerColor = CustomColors.backgroundPrimaryTop,
+            titleContentColor = CustomColors.onPrimaryInactive,
         ),
         title = {
             when (currentRoute) {

@@ -18,17 +18,13 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
-import com.grex.vyay.ui.theme.Copper
-import com.grex.vyay.ui.theme.Grey
-import com.grex.vyay.ui.theme.backgroundPrimaryBottom
-import com.grex.vyay.ui.theme.backgroundPrimaryTop
-import com.grex.vyay.ui.theme.primaryActive
+import com.grex.vyay.ui.theme.CustomColors
 
 @Composable
 fun FooterNavBar(navController: NavController) {
     NavigationBar(
         modifier = Modifier
-            .background(backgroundPrimaryBottom)
+            .background(CustomColors.backgroundPrimaryBottom)
             .fillMaxWidth()
             .wrapContentHeight()
             .height(56.dp)
@@ -37,8 +33,8 @@ fun FooterNavBar(navController: NavController) {
                 shape = RoundedCornerShape(topStart = 30.dp, topEnd = 30.dp)
                 shadowElevation = 20f
             },
-        containerColor = backgroundPrimaryTop,
-        contentColor = Copper,
+        containerColor = CustomColors.backgroundPrimaryTop,
+        contentColor = CustomColors.active,
         tonalElevation = 0.dp,
     ) {
         val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -80,7 +76,7 @@ fun FooterNavBar(navController: NavController) {
                             modifier = Modifier
                                 .offset(x = (-1).dp, y = (1).dp)
                                 .blur(4.dp),
-                            tint = Copper
+                            tint = CustomColors.primary
                         )
                     }
                     Icon(
@@ -90,11 +86,11 @@ fun FooterNavBar(navController: NavController) {
                 },
 //                label = { Text(text = screen.label) },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = primaryActive,
-                    selectedTextColor = primaryActive,
-                    unselectedIconColor = Grey,
-                    unselectedTextColor = Grey,
-                    indicatorColor = backgroundPrimaryTop
+                    selectedIconColor = CustomColors.primary,
+                    selectedTextColor = CustomColors.primary,
+                    unselectedIconColor = CustomColors.onPrimary,
+                    unselectedTextColor = CustomColors.onPrimary,
+                    indicatorColor = CustomColors.backgroundPrimaryTop
                 ),
             )
         }

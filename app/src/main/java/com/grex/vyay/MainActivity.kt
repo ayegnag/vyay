@@ -6,12 +6,16 @@ import androidx.activity.compose.setContent
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,16 +23,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.grex.vyay.ui.theme.ChampagnePink
-import com.grex.vyay.ui.theme.ColumbiaBlue
-import com.grex.vyay.ui.theme.LightCyan
+import com.grex.vyay.ui.theme.CustomColors
 import com.grex.vyay.ui.theme.VyayTheme
 
 
@@ -46,7 +48,7 @@ class MainActivity : ComponentActivity() {
                 // A surface container using the 'background' color from the theme
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                    color = CustomColors.backgroundPrimaryBottom
                 ) {
                     AppNavigation(this, settingsViewModel)
                 }
@@ -72,6 +74,7 @@ fun AppNavigation(activity: MainActivity, settingsViewModel: SettingsViewModel) 
     val currentRoute = currentBackStackEntry?.destination?.route
 
     var isTransactionRecordUpdated by remember { mutableStateOf<Boolean>(false) }
+    var showFab by remember { mutableStateOf(true) }
 
     fun navigateToTransactionDetails(transaction: TransactionRecord) {
         val route = Screen.TransactionDetails.createRoute(transaction.id, transaction.isManual)
@@ -85,7 +88,12 @@ fun AppNavigation(activity: MainActivity, settingsViewModel: SettingsViewModel) 
 
 //    val screensWithoutTopBar = listOf(Screen.Onboarding.route, Screen.Splash.route, Screen.TransactionDetails.route)
     val screensWithoutNavBar =
-        listOf(Screen.Onboarding.route, Screen.Splash.route, Screen.TransactionDetails.route)
+        listOf(
+            Screen.Onboarding.route,
+            Screen.Splash.route,
+            Screen.TransactionDetails.route,
+            Screen.AddTransaction.route
+        )
 
     Scaffold(
 //        topBar = {
@@ -97,7 +105,17 @@ fun AppNavigation(activity: MainActivity, settingsViewModel: SettingsViewModel) 
             if (currentRoute?.let { screensWithoutNavBar.contains(it) } == false) {
                 FooterNavBar(navController = navController)
             }
-        }
+        },
+        floatingActionButton = {
+            if (showFab) {
+                FloatingActionButton(
+                    onClick = { navController.navigate(Screen.AddTransaction.route) },
+                    containerColor = CustomColors.primary, contentColor = CustomColors.onPrimary, shape = CircleShape
+                ) {
+                    Icon(imageVector = Icons.Rounded.Add, contentDescription = "Add")
+                }
+            }
+        },
     ) { innerPadding ->
         NavHost(
             navController = navController,
@@ -118,6 +136,9 @@ fun AppNavigation(activity: MainActivity, settingsViewModel: SettingsViewModel) 
                         )
                     }
                 )
+                onScreenChange(screen = Screen.Onboarding.route, navController) {
+                    showFab = false
+                }
             }
             composable(Screen.Splash.route) {
                 SplashScreen(
@@ -128,14 +149,29 @@ fun AppNavigation(activity: MainActivity, settingsViewModel: SettingsViewModel) 
                         }
                     }
                 )
+                onScreenChange(screen = Screen.Splash.route, navController) {
+                    showFab = false
+                }
             }
             composable(Screen.Home.route) {
                 HomeScreen(activity, innerPadding)
+                onScreenChange(screen = Screen.Home.route, navController) {
+                    showFab = true
+                }
             }
             composable(Screen.Reports.route) {
-                ReportsScreen(activity, innerPadding, isTransactionRecordUpdated, onReportClick = { yearMonth ->
-                    navigateToMonthlyStatement(yearMonth)
-                }, onAckUpdate = { value -> isTransactionRecordUpdated = value})
+                ReportsScreen(
+                    activity,
+                    innerPadding,
+                    isTransactionRecordUpdated,
+                    onReportClick = { yearMonth ->
+                        navigateToMonthlyStatement(yearMonth)
+                    },
+                    onAckUpdate = { value -> isTransactionRecordUpdated = value }
+                )
+                onScreenChange(screen = Screen.Reports.route, navController) {
+                    showFab = true
+                }
             }
             composable(
                 route = Screen.Statements.route,
@@ -148,7 +184,11 @@ fun AppNavigation(activity: MainActivity, settingsViewModel: SettingsViewModel) 
                     innerPadding,
                     onTransactionClick = { transaction ->
                         navigateToTransactionDetails(transaction)
-                    })
+                    }
+                )
+                onScreenChange(screen = Screen.Statements.route, navController) {
+                    showFab = true
+                }
             }
             composable(
                 route = Screen.TransactionDetails.route,
@@ -162,7 +202,25 @@ fun AppNavigation(activity: MainActivity, settingsViewModel: SettingsViewModel) 
             ) { backStackEntry ->
                 val transactionId = backStackEntry.arguments?.getString("transactionId")
                 val isManual = backStackEntry.arguments?.getString("isManual").toBoolean()
-                TransactionDetails(transactionId = transactionId, isManual = isManual, navController = navController, isTransactionRecordUpdated, onAckUpdate = { value -> isTransactionRecordUpdated = value})
+                TransactionDetails(
+                    transactionId = transactionId,
+                    isManual = isManual,
+                    navController = navController,
+                    onAckUpdate = { value -> isTransactionRecordUpdated = value }
+                )
+                onScreenChange(screen = Screen.TransactionDetails.route, navController) {
+                    showFab = false
+                }
+            }
+            composable(Screen.AddTransaction.route) {
+                AddTransaction(
+                    navController = navController,
+                    smsAnalysisService = activity.smsAnalysisService,
+                    onAckUpdate = { value -> isTransactionRecordUpdated = value }
+                )
+                onScreenChange(screen = Screen.AddTransaction.route, navController) {
+                    showFab = false
+                }
             }
             composable(Screen.Settings.route) {
                 SettingsScreen(
@@ -170,11 +228,25 @@ fun AppNavigation(activity: MainActivity, settingsViewModel: SettingsViewModel) 
                     innerPadding,
                     settingsViewModel
                 )
+                onScreenChange(screen = Screen.Settings.route, navController) {
+                    showFab = false
+                }
             }
         }
     }
 }
 
+@Composable
+fun onScreenChange(
+    screen: String,
+    navController: NavHostController,
+    updateFabVisibility: () -> Unit
+) {
+    // Update FAB visibility based on the current screen
+    LaunchedEffect(screen) {
+        updateFabVisibility()
+    }
+}
 // Previews --------------------------------------------------------
 
 @Preview(showBackground = true)
@@ -185,15 +257,15 @@ fun GreetingPreview() {
     }
 }
 
-@Preview(showBackground = false)
-@Composable
-fun PieChartPreview() {
-    VyayTheme {
-        val data = listOf(
-            PieChartData(value = 0.4f, color = ChampagnePink),
-            PieChartData(value = 0.6f, color = LightCyan),
-            PieChartData(value = 0.5f, color = ColumbiaBlue)
-        )
-        PieChart(data = data, modifier = Modifier.height(200.dp))
-    }
-}
+//@Preview(showBackground = false)
+//@Composable
+//fun PieChartPreview() {
+//    VyayTheme {
+//        val data = listOf(
+//            PieChartData(value = 0.4f, color = ChampagnePink),
+//            PieChartData(value = 0.6f, color = LightCyan),
+//            PieChartData(value = 0.5f, color = ColumbiaBlue)
+//        )
+//        PieChart(data = data, modifier = Modifier.height(200.dp))
+//    }
+//}

@@ -28,14 +28,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.grex.vyay.ui.theme.Grey
-import com.grex.vyay.ui.theme.backgroundPrimaryBottom
-import com.grex.vyay.ui.theme.backgroundPrimaryTop
-import com.grex.vyay.ui.theme.primaryColor
+import com.grex.vyay.ui.theme.CustomColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +47,7 @@ fun ReportsScreen(
     var incomeData by remember { mutableStateOf<List<MonthlyTotal>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
     val systemUiController = rememberSystemUiController()
+
     suspend fun fetchData() {
         isLoading = true
         expenseData = smsAnalysisService.fetchMonthlyExpense()
@@ -69,11 +66,11 @@ fun ReportsScreen(
     }
     DisposableEffect(systemUiController) {
         systemUiController.setStatusBarColor(
-            color = backgroundPrimaryTop,
+            color = CustomColors.backgroundPrimaryTop,
             darkIcons = false // Set to false for light icons
         )
         systemUiController.setNavigationBarColor(
-            color = backgroundPrimaryTop,
+            color = CustomColors.backgroundPrimaryTop,
             darkIcons = false // Set to false for light icons
         )
         onDispose {}
@@ -91,8 +88,8 @@ fun ReportsScreen(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = backgroundPrimaryTop,
-                    titleContentColor = Grey,
+                    containerColor = CustomColors.backgroundPrimaryTop,
+                    titleContentColor = CustomColors.onPrimary,
                 ),
                 title = { Text("Reports") },
                 actions = {
@@ -113,19 +110,23 @@ fun ReportsScreen(
             } else {
                 Column(
                     modifier = Modifier
-                        .padding(paddingValues)
                         .fillMaxSize()
                         .background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    backgroundPrimaryTop,
-                                    backgroundPrimaryBottom
+                                    CustomColors.backgroundPrimaryTop,
+                                    CustomColors.backgroundPrimaryBottom
                                 )
                             )
                         )
-                        .padding(24.dp)
+                        .padding(paddingValues)
                 ) {
-                    Text(text = "Monthly Expense Reports", color = Color.White)
+                    Text(
+                        text = "Monthly Expense Reports",
+                        color = CustomColors.onPrimary,
+                        modifier = Modifier
+                            .padding(24.dp)
+                    )
                     Spacer(modifier = Modifier.height(24.dp))
                     ExpenseBarChart(
                         expenses = expenseData,
@@ -157,9 +158,9 @@ fun ReportsScreen() {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(primaryColor)
+            .background(CustomColors.backgroundPrimaryTop)
     ) {
-        Text(text = "Expense Reports", color = Color.White)
+        Text(text = "Expense Reports", color = CustomColors.onPrimary)
         Spacer(modifier = Modifier.height(24.dp))
         ExpenseBarChart(expenses = expenseData, incomes = incomeData) { onItemClick ->
             /* TODO */

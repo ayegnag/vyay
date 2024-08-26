@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.MoreVert
@@ -40,19 +43,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.grex.vyay.ui.theme.Cream
-import com.grex.vyay.ui.theme.Grey
-import com.grex.vyay.ui.theme.LimeGreen
-import com.grex.vyay.ui.theme.PetalRed
-import com.grex.vyay.ui.theme.PurpleGrey40
-import com.grex.vyay.ui.theme.backgroundPrimaryBottom
-import com.grex.vyay.ui.theme.backgroundPrimaryTop
-import com.grex.vyay.ui.theme.secondaryInactive
+import com.grex.vyay.ui.theme.CustomColors
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -92,11 +89,11 @@ fun StatementsScreen(
     val systemUiController = rememberSystemUiController()
     DisposableEffect(systemUiController) {
         systemUiController.setStatusBarColor(
-            color = backgroundPrimaryTop,
+            color = CustomColors.backgroundPrimaryTop,
             darkIcons = false
         )
         systemUiController.setNavigationBarColor(
-            color = backgroundPrimaryTop,
+            color = CustomColors.backgroundPrimaryTop,
             darkIcons = false
         )
         onDispose {}
@@ -106,8 +103,8 @@ fun StatementsScreen(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = backgroundPrimaryTop,
-                    titleContentColor = Grey,
+                    containerColor = CustomColors.backgroundPrimaryTop,
+                    titleContentColor = CustomColors.onPrimary,
                 ),
                 title = { Text("$displayMonth Statements") },
                 actions = {
@@ -128,8 +125,8 @@ fun StatementsScreen(
                     .background(
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                backgroundPrimaryTop,
-                                backgroundPrimaryBottom
+                                CustomColors.backgroundPrimaryTop,
+                                CustomColors.backgroundPrimaryBottom
                             )
                         )
                     )
@@ -166,58 +163,83 @@ fun TransactionItem(
     transaction: TransactionRecord,
     onClick: () -> Unit
 ) {
+
     val isIncome = ifIncome(transaction.transactionType)
     val amountColor =
-        if (!transaction.isTransaction) PurpleGrey40
-        else if (isIncome) LimeGreen
-        else PetalRed // Custom green and red colors
+        if (!transaction.isTransaction) CustomColors.onPrimaryInactive
+        else if (isIncome) CustomColors.income
+        else CustomColors.expense // Custom green and red colors
     val amountPrefix = if (isIncome) "+" else "-"
+    val labelColor =
+        if (!transaction.isTransaction) CustomColors.onPrimaryInactive
+        else CustomColors.onPrimary
+    val shapeColor =
+        if (!transaction.isTransaction) CustomColors.secondaryInactive
+        else CustomColors.secondary
+    val barColor = if (!transaction.isTransaction) CustomColors.secondaryInactive
+    else CustomColors.surface
     val utils = Utilities()
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp)
-            .clickable(onClick = onClick),
+            .padding(8.dp)
+            .clickable(onClick = onClick)
+            .clip(shape = RoundedCornerShape(36.dp))
+            .background(barColor),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Placeholder for icon
-        Box(
+        Row(
             modifier = Modifier
-                .size(40.dp)
-                .background(Color.Gray, CircleShape)
-        )
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-                    .format(Date(transaction.receivedOnDate)),
-                style = MaterialTheme.typography.bodyMedium,
-                color = Cream
+                .padding(12.dp)
+                .fillMaxSize()
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(Color.Gray, CircleShape)
             )
-            Text(
-                text = transaction.transactionType ?: "Unknown",
-                style = MaterialTheme.typography.bodySmall,
-                color = Cream
-            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                        .format(Date(transaction.receivedOnDate)),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = labelColor
+                )
+                Text(
+                    text = transaction.transactionType ?: "Unknown",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = labelColor
+                )
+            }
+
+            Column(modifier = Modifier.height(40.dp), verticalArrangement = Arrangement.Center) {
+                Row {
+
+                    Text(
+                        text = "$amountPrefix ${
+                            transaction.amount?.let {
+                                utils.getCurrencyFormat(transaction.amount)
+                            } ?: "-"
+                        }",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = amountColor,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = null,
+                        tint = CustomColors.onSecondary,
+                        modifier = Modifier.offset(x = 8.dp)
+                    )
+                }
+            }
         }
-
-        Text(
-            text = "$amountPrefix ${
-                transaction.amount?.let {
-                    utils.getCurrencyFormat(transaction.amount)
-                } ?: "-"
-            }",
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Bold,
-            color = amountColor
-        )
-        Icon(
-            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null,
-            tint = secondaryInactive, modifier = Modifier.offset(x = 8.dp)
-        )
     }
 }
 
@@ -335,8 +357,8 @@ fun ifIncome(transactionType: String?): Boolean {
 //                .background(
 //                    brush = Brush.verticalGradient(
 //                        colors = listOf(
-//                            backgroundPrimaryTop,
-//                            backgroundPrimaryBottom
+//                            MaterialTheme.colorScheme.background,
+//                            CustomColors.backgroundPrimaryBottom
 //                        )
 //                    )
 //                )

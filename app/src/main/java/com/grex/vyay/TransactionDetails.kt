@@ -1,8 +1,8 @@
 package com.grex.vyay
 
 import android.content.Context
-import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,18 +10,25 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.ArrowForward
+import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.filled.Tag
+import androidx.compose.material.icons.filled.Wallet
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -47,27 +54,19 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.grex.vyay.ui.theme.CopperLight
-import com.grex.vyay.ui.theme.DarkwingPurple
-import com.grex.vyay.ui.theme.Geru
-import com.grex.vyay.ui.theme.Grey
-import com.grex.vyay.ui.theme.LimeGreen
-import com.grex.vyay.ui.theme.MistyRose
-import com.grex.vyay.ui.theme.PetalRed
-import com.grex.vyay.ui.theme.PurpleGrey40
-import com.grex.vyay.ui.theme.backgroundPrimaryBottom
-import com.grex.vyay.ui.theme.backgroundPrimaryTop
-import com.grex.vyay.ui.theme.primaryInactive
-import com.grex.vyay.ui.theme.secondaryInactive
+import com.grex.vyay.ui.theme.CustomColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -76,7 +75,6 @@ fun TransactionDetails(
     transactionId: String?,
     isManual: Boolean,
     navController: NavController,
-    isTransactionRecordUpdated: Boolean,
     onAckUpdate: (Boolean) -> Unit
 ) {
     val applicationContext: Context = VyayApp.instance.applicationContext
@@ -89,14 +87,39 @@ fun TransactionDetails(
 
     var isTransactionUpdated by remember { mutableStateOf(false) }
     var isNotTransaction by remember { mutableStateOf(false) }
+    val transactionTagsState = remember { mutableStateOf(transaction?.tags.toString()) }
+    var tagSelectorKey by remember { mutableStateOf(0) }
+
+    var expenseColor by remember { mutableStateOf(CustomColors.expense) }
+    var incomeColor by remember { mutableStateOf(CustomColors.income) }
+    var amountColor by remember { mutableStateOf(CustomColors.activeAlt) }
+    var shapeColor by remember { mutableStateOf(CustomColors.secondary) }
+    var iconColor by remember { mutableStateOf(CustomColors.onSecondary) }
+    var toggleTextColor by remember { mutableStateOf(CustomColors.active) }
+
+    fun assignColors(currentTransaction: TransactionRecord?) {
+        currentTransaction?.let { t ->
+            expenseColor =
+                if (!t.isTransaction) CustomColors.onPrimaryInactive else CustomColors.expense
+            incomeColor =
+                if (!t.isTransaction) CustomColors.onPrimaryInactive else CustomColors.income
+            amountColor =
+                if (!t.isTransaction) CustomColors.onPrimaryInactive else CustomColors.activeAlt
+            shapeColor =
+                if (!t.isTransaction) CustomColors.onPrimaryInactive else CustomColors.secondary
+            iconColor = if (!t.isTransaction) CustomColors.surface else CustomColors.onSecondary
+            toggleTextColor =
+                if (!t.isTransaction) CustomColors.onSecondary else CustomColors.active
+        }
+    }
 
     DisposableEffect(systemUiController) {
         systemUiController.setStatusBarColor(
-            color = backgroundPrimaryTop,
+            color = CustomColors.backgroundPrimaryTop,
             darkIcons = false // Set to false for light icons
         )
         systemUiController.setNavigationBarColor(
-            color = backgroundPrimaryBottom,
+            color = CustomColors.backgroundPrimaryBottom,
             darkIcons = false // Set to false for light icons
         )
         onDispose {}
@@ -113,27 +136,31 @@ fun TransactionDetails(
         }
         backUpState = transaction?.copy()
         isNotTransaction = transaction?.isTransaction == false
-    }
-    var showSmsSource by remember { mutableStateOf<Boolean>(false) }
-    fun getTransactionColor(type: String? = null): Color {
-        return when (type) {
-            "expense" -> PetalRed
-            "income" -> LimeGreen
-            else -> PurpleGrey40
-        }
+        transactionTagsState.value = transaction?.tags.toString()
+        tagSelectorKey++
+        assignColors(transaction)
     }
 
-    fun onNotTransactionChange(value: Boolean) {
-        isTransactionUpdated = true
-        isNotTransaction = value
-        transaction?.isTransaction ?: value
-        Log.d("NotTransaction", value.toString())
+    LaunchedEffect(transaction) {
+        assignColors(transaction)
+    }
+    var showSmsSource by remember { mutableStateOf<Boolean>(false) }
+
+
+    fun getTransactionColor(type: String? = null): Color {
+        return when (type) {
+            "expense" -> expenseColor
+            "income" -> incomeColor
+            else -> CustomColors.onPrimaryInactive
+        }
     }
 
     fun onCancelClick() {
         isTransactionUpdated = false
         isNotTransaction = backUpState?.isTransaction == false
+        transactionTagsState.value = backUpState?.tags.toString()
         transaction = backUpState?.copy()
+        tagSelectorKey++
     }
 
     suspend fun onSaveClick() {
@@ -145,8 +172,8 @@ fun TransactionDetails(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = backgroundPrimaryTop,
-                    titleContentColor = Grey,
+                    containerColor = CustomColors.backgroundPrimaryTop,
+                    titleContentColor = CustomColors.onPrimary,
                 ),
                 title = {
                     when (isTransactionUpdated) {
@@ -196,183 +223,221 @@ fun TransactionDetails(
                     .background(
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                backgroundPrimaryTop,
-                                backgroundPrimaryBottom
+                                CustomColors.backgroundPrimaryTop,
+                                CustomColors.backgroundPrimaryBottom
                             )
                         )
                     )
+                    .fillMaxSize()
             ) {
                 Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
                         .align(Alignment.Center)
                 ) {
                     if (transaction != null) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier
-                                .fillMaxSize(),
-                            color = DarkwingPurple
-                        ) {
-                            Column(
+                        Box() {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
                                 modifier = Modifier
-                                    .padding(24.dp)
+                                    .fillMaxWidth(),
+                                color = CustomColors.surface
                             ) {
-                                Row(
+                                Column(
                                     modifier = Modifier
-                                        .fillMaxWidth()
-                                        .wrapContentHeight()
-                                        .background(Color.Transparent)
+                                        .padding(24.dp)
                                 ) {
-                                    Surface(
-                                        shape = CircleShape,
-                                        modifier = Modifier
-                                            .size(42.dp)
-                                            .background(
-                                                Color.Transparent
-                                            )
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.ShoppingCart,
-                                            contentDescription = "Category Icon",
-                                            tint = MistyRose,
-                                            modifier = Modifier
-                                                .size(38.dp)
-                                                .background(secondaryInactive)
-                                                .padding(8.dp)
-                                        )
-                                    }
-                                    Text(
-                                        "${transaction?.amount?.let { utils.getCurrencyFormat(it) }}",
-                                        style = MaterialTheme.typography.headlineLarge,
-                                        fontWeight = FontWeight.SemiBold,
-                                        modifier = Modifier.padding(start = 24.dp),
-                                        color = CopperLight
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Text(
-                                    "${transaction?.receivedAt}",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    maxLines = 1,
-                                    modifier = Modifier
-                                        .drawBehind {
-                                            val strokeWidthPx = 1.dp.toPx()
-                                            val verticalOffset = size.height + 2.sp.toPx()
-                                            drawLine(
-                                                color = primaryInactive,
-                                                strokeWidth = strokeWidthPx,
-                                                start = Offset(0f, verticalOffset),
-                                                end = Offset(size.width, verticalOffset)
-                                            )
-                                        },
-                                    color = MistyRose
-                                )
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Row {
+                                    Spacer(modifier = Modifier.height(18.dp))
+
                                     Column {
-                                        Row {
+
+                                        Text(
+                                            "${
+                                                transaction!!.amount?.let {
+                                                    utils.getCurrencyFormat(
+                                                        it
+                                                    )
+                                                }
+                                            }",
+                                            style = MaterialTheme.typography.headlineLarge,
+                                            fontWeight = FontWeight.SemiBold,
+                                            textAlign = TextAlign.Start,
+                                            color = amountColor
+                                        )
+                                        Row(
+                                            horizontalArrangement = Arrangement.End,
+                                            modifier = Modifier.align(Alignment.Start)
+                                        ) {
                                             if (transaction!!.transactionType == "expense") {
                                                 Icon(
                                                     imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
                                                     contentDescription = "expense",
-                                                    modifier = Modifier.rotate(-45f),
-                                                    tint = Geru
+                                                    modifier = Modifier
+                                                        .rotate(-45f)
+                                                        .offset(x = (-4).dp),
+                                                    tint = expenseColor
                                                 )
                                             } else if (transaction!!.transactionType == "income") {
                                                 Icon(
                                                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
                                                     contentDescription = "income",
-                                                    modifier = Modifier.rotate(-45f),
-                                                    tint = LimeGreen
+                                                    modifier = Modifier
+                                                        .rotate(-45f)
+                                                        .offset(x = (-4).dp, y = (-4).dp),
+                                                    tint = incomeColor
                                                 )
                                             }
                                             Text(
                                                 "${transaction!!.transactionType}",
                                                 style = MaterialTheme.typography.bodyLarge,
-                                                modifier = Modifier
-                                                    .padding(start = 10.dp),
                                                 color = getTransactionColor(transaction!!.transactionType)
                                             )
                                         }
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            transaction?.isTransaction?.let {
+                                        Spacer(modifier = Modifier.height(16.dp))
+
+                                        transaction!!.receivedAt?.let {
+                                            DetailRow(Icons.Filled.Person, iconColor,
+                                                it, CustomColors.onPrimary)
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                                            .format(Date(transaction!!.receivedOnDate)).let {
+                                                DetailRow(Icons.Filled.AccessTime, iconColor,
+                                                    it, CustomColors.onPrimary)
+                                            }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        transaction!!.transactionMode?.let {
+                                            DetailRow(Icons.Filled.Wallet, iconColor,
+                                                it, CustomColors.onPrimary)
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Tag,
+                                            contentDescription = "income",
+                                            modifier = Modifier
+                                                .width(20.dp)
+                                                .align(Alignment.Top)
+                                                .padding(top = 15.dp),
+                                            tint = CustomColors.onSecondary
+                                        )
+                                        TagSelector(
+                                            tagsState = transactionTagsState,
+                                            transaction!!.transactionType,
+                                            key = tagSelectorKey,
+                                            modifier = Modifier
+                                                .padding(start = 8.dp)
+                                        ) { newTags ->
+                                            transactionTagsState.value = newTags
+                                            transaction =
+                                                transaction?.copy(tags = newTags)!!
+                                            isTransactionUpdated = true
+                                        }
+                                    }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Info,
+                                            contentDescription = "income",
+                                            modifier = Modifier
+                                                .size(20.dp),
+                                            tint = CustomColors.onSecondary
+                                        )
+                                        Text(
+                                            text = transaction!!.source.uppercase(Locale("en")),
+                                            color = CustomColors.onPrimary,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            modifier = Modifier.padding(start = 10.dp)
+                                        )
+                                        if (transaction!!.source == "sms") {
+                                            Spacer(Modifier.weight(1f))
+                                            if (showSmsSource) {
+                                                TextButton(
+                                                    colors = ButtonColors(
+                                                        containerColor = Color.Transparent,
+                                                        contentColor = CustomColors.active,
+                                                        disabledContainerColor = Color.Transparent,
+                                                        disabledContentColor = CustomColors.onPrimaryInactive
+                                                    ),
+                                                    onClick = { showSmsSource = false }) {
+                                                    Text(text = "Hide")
+                                                }
+                                            } else {
+                                                TextButton(
+                                                    colors = ButtonColors(
+                                                        containerColor = Color.Transparent,
+                                                        contentColor = CustomColors.active,
+                                                        disabledContainerColor = Color.Transparent,
+                                                        disabledContentColor = CustomColors.onPrimaryInactive
+                                                    ),
+                                                    onClick = { showSmsSource = true }) {
+                                                    Text(text = "Show")
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (showSmsSource) {
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                        ) {
+                                            Text(
+                                                text = transaction!!.body,
+                                                color = CustomColors.onSecondary,
+                                                modifier = Modifier
+                                                    .background(CustomColors.onTertiary)
+                                                    .padding(8.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                    }
+                                    Row {
+                                        Column {
+
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.Start
+                                            ) {
                                                 Checkbox(
                                                     checked = isNotTransaction,
                                                     onCheckedChange = { value ->
                                                         isTransactionUpdated = true
                                                         isNotTransaction = value
-                                                        transaction?.isTransaction = !value
-                                                    }
+                                                        transaction =
+                                                            transaction?.copy(isTransaction = !value)
+                                                    },
+                                                    modifier = Modifier.offset(x = (-11).dp)
+                                                )
+                                                Text(
+                                                    text = "Not a transaction",
+                                                    color = toggleTextColor,
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    modifier = Modifier
+                                                        .padding(start = 0.dp)
+                                                        .offset(x = (-6).dp)
                                                 )
                                             }
-                                            Text(
-                                                text = "Not a transaction",
-                                                color = secondaryInactive,
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                modifier = Modifier.padding(start = 10.dp)
-                                            )
                                         }
                                     }
                                 }
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Row(verticalAlignment = Alignment.Bottom) {
-                                    Text(
-                                        text = "Mode",
-                                        color = secondaryInactive,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                    )
-                                    transaction!!.transactionMode?.let {
-                                        Text(
-                                            text = it,
-                                            color = MistyRose,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            modifier = Modifier.padding(start = 10.dp)
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "Data Source",
-                                        color = secondaryInactive,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                    )
-                                    Text(
-                                        text = transaction!!.source.uppercase(Locale("en")),
-                                        color = MistyRose,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        modifier = Modifier.padding(start = 10.dp)
-                                    )
-                                    if (transaction!!.source == "sms") {
-                                        Spacer(Modifier.weight(1f))
-                                        if (showSmsSource) {
-                                            TextButton(onClick = { showSmsSource = false }) {
-                                                Text(text = "Hide")
-                                            }
-                                        } else {
-                                            TextButton(onClick = { showSmsSource = true }) {
-                                                Text(text = "Show")
-                                            }
-                                        }
-                                    }
-                                }
-                                if (showSmsSource) {
-                                    Text(text = transaction!!.body)
-                                }
-                                Spacer(modifier = Modifier.height(24.dp))
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = "Tags",
-                                        color = secondaryInactive,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                    )
-                                    TextButton(onClick = { /*TODO*/ }) {
-                                        Text(text = "+ Add Tag")
-                                    }
-                                }
+                            }
 
+                            Surface(
+                                shape = CircleShape,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .offset(x = 24.dp, y = (-24).dp)
+                                    .background(
+                                        Color.Transparent
+                                    )
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.ShoppingCart,
+                                    contentDescription = "Category Icon",
+                                    tint = iconColor,
+                                    modifier = Modifier
+                                        .size(38.dp)
+                                        .background(shapeColor)
+                                        .padding(8.dp)
+                                )
                             }
                         }
                     } else {
@@ -385,11 +450,12 @@ fun TransactionDetails(
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 fun TransactionDetailPreview() {
     val utils = Utilities()
-    val transaction = TransactionRecord(
+    var transaction = TransactionRecord(
         id = 376,
         isManual = false,
         address = "AX-HDFCBK",
@@ -404,54 +470,284 @@ fun TransactionDetailPreview() {
         isTransaction = true,
         body = "Amt Sent Rs.162.00 From HDFC Bank A/C *1331 To NEERAJA JAKHAR On 27-06 Ref 417943558423 Not You? Call 18002586161/SMS BLOCK UPI to 7308080808",
         category = "",
-        tags = ""
+        tags = "Groceries, Monthly, House1"
     )
-    var showSmsSource by remember { mutableStateOf<Boolean>(false) }
+    var isNotTransaction by remember { mutableStateOf(false) }
+    var isTransactionUpdated by remember { mutableStateOf(false) }
+    var showSmsSource by remember { mutableStateOf<Boolean>(true) }
+    var expenseColor by remember { mutableStateOf(CustomColors.expense) }
+    var incomeColor by remember { mutableStateOf(CustomColors.income) }
+    var amountColor by remember { mutableStateOf(CustomColors.activeAlt) }
+    var shapeColor by remember { mutableStateOf(CustomColors.secondary) }
+    var iconColor by remember { mutableStateOf(CustomColors.onSecondary) }
+    var toggleTextColor by remember { mutableStateOf(CustomColors.active) }
+    val transactionTagsState = remember { mutableStateOf(transaction?.tags.toString()) }
+
+
+
     fun getTransactionColor(type: String? = null): Color {
         return when (type) {
-            "expense" -> PetalRed
-            "income" -> LimeGreen
-            else -> PurpleGrey40
+            "expense" -> expenseColor
+            "income" -> incomeColor
+            else -> CustomColors.onPrimaryInactive
         }
     }
-    Box(
-        modifier = Modifier
-            .background(
-                brush = Brush.verticalGradient(
-                    colors = listOf(
-                        backgroundPrimaryTop,
-                        backgroundPrimaryBottom
-                    )
-                )
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = CustomColors.backgroundPrimaryTop,
+                    titleContentColor = CustomColors.onPrimary,
+                ),
+                title = {
+                    when (isTransactionUpdated) {
+                        false -> Text("Details")
+                        true -> Text("Save Changes")
+                    }
+                },
+                navigationIcon = {
+                    if (isTransactionUpdated) {
+                        IconButton(onClick = {
+                            /*TODO*/
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Cancel"
+                            )
+                        }
+                    } else {
+                        IconButton(onClick = { /*TODO*/ }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back"
+                            )
+                        }
+                    }
+                },
+                actions = {
+                    if (isTransactionUpdated) {
+                        IconButton(onClick = {
+                            CoroutineScope(Dispatchers.Main).launch {
+                                /*TODO*/
+                            }
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Save Changes"
+                            )
+                        }
+                    }
+                },
             )
-            .fillMaxSize()
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(16.dp)
-                .align(Alignment.Center)
-        ) {
-            if (transaction != null) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
+        },
+        content = { paddingValues ->
+            Box(
+                modifier = Modifier
+                    .padding(paddingValues)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                CustomColors.backgroundPrimaryTop,
+                                CustomColors.backgroundPrimaryBottom
+                            )
+                        )
+                    )
+                    .fillMaxSize()
+            ) {
+                Column(
                     modifier = Modifier
-                        .fillMaxSize(),
-                    color = DarkwingPurple
+                        .align(Alignment.Center)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(24.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .wrapContentHeight()
-                                .background(Color.Transparent)
-                        ) {
+                    if (transaction != null) {
+                        Box() {
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                modifier = Modifier
+                                    .fillMaxWidth(),
+                                color = CustomColors.surface
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .padding(24.dp)
+                                ) {
+                                    Spacer(modifier = Modifier.height(18.dp))
+
+                                    Column {
+
+                                        Text(
+                                            "${
+                                                transaction!!.amount?.let {
+                                                    utils.getCurrencyFormat(
+                                                        it
+                                                    )
+                                                }
+                                            }",
+                                            style = MaterialTheme.typography.headlineLarge,
+                                            fontWeight = FontWeight.SemiBold,
+                                            textAlign = TextAlign.Start,
+                                            color = amountColor
+                                        )
+                                        Row(
+                                            horizontalArrangement = Arrangement.End,
+                                            modifier = Modifier.align(Alignment.Start)
+                                        ) {
+                                            if (transaction!!.transactionType == "expense") {
+                                                Icon(
+                                                    imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
+                                                    contentDescription = "expense",
+                                                    modifier = Modifier
+                                                        .rotate(-45f)
+                                                        .offset(x = (-4).dp),
+                                                    tint = expenseColor
+                                                )
+                                            } else if (transaction.transactionType == "income") {
+                                                Icon(
+                                                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
+                                                    contentDescription = "income",
+                                                    modifier = Modifier
+                                                        .rotate(-45f)
+                                                        .offset(x = (-4).dp, y = (-4).dp),
+                                                    tint = incomeColor
+                                                )
+                                            }
+                                            Text(
+                                                "${transaction.transactionType}",
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                color = getTransactionColor(transaction.transactionType)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        transaction.receivedAt?.let {
+                                            DetailRow(Icons.Filled.Person, iconColor,
+                                                it, CustomColors.onPrimary)
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+                                            .format(Date(transaction.receivedOnDate)).let {
+                                                DetailRow(Icons.Filled.AccessTime, iconColor,
+                                                    it, CustomColors.onPrimary)
+                                            }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        transaction.transactionMode?.let {
+                                            DetailRow(Icons.Filled.Wallet, iconColor,
+                                                it, CustomColors.onPrimary)
+                                        }
+                                    }
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Tag,
+                                            contentDescription = "income",
+                                            modifier = Modifier
+                                                .width(20.dp)
+                                                .align(Alignment.Top)
+                                                .padding(top = 15.dp),
+                                            tint = CustomColors.onSecondary
+                                        )
+                                        TagSelector(
+                                            transactionTagsState,
+                                            transaction!!.transactionType,
+                                            0,
+                                            modifier = Modifier
+                                                .padding(start = 8.dp)
+                                        ) { newTags ->
+                                            transaction =
+                                                transaction?.copy(tags = newTags)!!
+                                            isTransactionUpdated = true
+                                        }
+                                    }
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Info,
+                                            contentDescription = "income",
+                                            modifier = Modifier
+                                                .size(20.dp),
+                                            tint = CustomColors.onSecondary
+                                        )
+                                        Text(
+                                            text = transaction!!.source.uppercase(Locale("en")),
+                                            color = CustomColors.onPrimary,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            modifier = Modifier.padding(start = 10.dp)
+                                        )
+                                        if (transaction!!.source == "sms") {
+                                            Spacer(Modifier.weight(1f))
+                                            if (showSmsSource) {
+                                                TextButton(
+                                                    colors = ButtonColors(
+                                                        containerColor = Color.Transparent,
+                                                        contentColor = CustomColors.active,
+                                                        disabledContainerColor = Color.Transparent,
+                                                        disabledContentColor = CustomColors.onPrimaryInactive
+                                                    ),
+                                                    onClick = { showSmsSource = false }) {
+                                                    Text(text = "Hide")
+                                                }
+                                            } else {
+                                                TextButton(
+                                                    colors = ButtonColors(
+                                                        containerColor = Color.Transparent,
+                                                        contentColor = CustomColors.active,
+                                                        disabledContainerColor = Color.Transparent,
+                                                        disabledContentColor = CustomColors.onPrimaryInactive
+                                                    ),
+                                                    onClick = { showSmsSource = true }) {
+                                                    Text(text = "Show")
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (showSmsSource) {
+                                        Surface(
+                                            shape = RoundedCornerShape(8.dp),
+                                        ) {
+                                            Text(
+                                                text = transaction!!.body,
+                                                color = CustomColors.onSecondary,
+                                                modifier = Modifier
+                                                    .background(CustomColors.onTertiary)
+                                                    .padding(8.dp)
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                    }
+                                    Row {
+                                        Column {
+
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.Start
+                                            ) {
+                                                Checkbox(
+                                                    checked = isNotTransaction,
+                                                    onCheckedChange = { value ->
+                                                        isTransactionUpdated = true
+                                                        isNotTransaction = value
+                                                        transaction =
+                                                            transaction?.copy(isTransaction = !value)!!
+                                                    },
+                                                    modifier = Modifier.offset(x = (-11).dp)
+                                                )
+                                                Text(
+                                                    text = "Not a transaction",
+                                                    color = toggleTextColor,
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    modifier = Modifier
+                                                        .padding(start = 0.dp)
+                                                        .offset(x = (-6).dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
                             Surface(
                                 shape = CircleShape,
                                 modifier = Modifier
-                                    .size(42.dp)
+                                    .size(48.dp)
+                                    .offset(x = 24.dp, y = (-24).dp)
                                     .background(
                                         Color.Transparent
                                     )
@@ -459,139 +755,51 @@ fun TransactionDetailPreview() {
                                 Icon(
                                     imageVector = Icons.Filled.ShoppingCart,
                                     contentDescription = "Category Icon",
-                                    tint = MistyRose,
+                                    tint = iconColor,
                                     modifier = Modifier
                                         .size(38.dp)
-                                        .background(secondaryInactive)
+                                        .background(shapeColor)
                                         .padding(8.dp)
                                 )
                             }
-                            Text(
-                                "${transaction?.amount?.let { utils.getCurrencyFormat(it) }}",
-                                style = MaterialTheme.typography.headlineLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.padding(start = 24.dp),
-                                color = CopperLight
-                            )
                         }
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Text(
-                            "${transaction?.receivedAt}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 1,
-                            modifier = Modifier
-                                .drawBehind {
-                                    val strokeWidthPx = 1.dp.toPx()
-                                    val verticalOffset = size.height + 2.sp.toPx()
-                                    drawLine(
-                                        color = primaryInactive,
-                                        strokeWidth = strokeWidthPx,
-                                        start = Offset(0f, verticalOffset),
-                                        end = Offset(size.width, verticalOffset)
-                                    )
-                                },
-                            color = MistyRose
-                        )
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Row {
-                            Column {
-                                Row {
-                                    if (transaction.transactionType == "expense") {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Outlined.ArrowForward,
-                                            contentDescription = "expense",
-                                            modifier = Modifier.rotate(-45f),
-                                            tint = Geru
-                                        )
-                                    } else if (transaction.transactionType == "income") {
-                                        Icon(
-                                            imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                                            contentDescription = "income",
-                                            modifier = Modifier.rotate(-45f),
-                                            tint = LimeGreen
-                                        )
-                                    }
-                                    Text(
-                                        "${transaction.transactionType}",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        modifier = Modifier
-                                            .padding(start = 10.dp),
-                                        color = getTransactionColor(transaction.transactionType)
-                                    )
-                                }
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Checkbox(checked = false, onCheckedChange = null)
-                                    Text(
-                                        text = "Not a transaction",
-                                        color = secondaryInactive,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        modifier = Modifier.padding(start = 10.dp)
-                                    )
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Row(verticalAlignment = Alignment.Bottom) {
-                            Text(
-                                text = "Mode",
-                                color = secondaryInactive,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            transaction.transactionMode?.let {
-                                Text(
-                                    text = it,
-                                    color = MistyRose,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    modifier = Modifier.padding(start = 10.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "Data Source",
-                                color = secondaryInactive,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            Text(
-                                text = "${transaction.source.uppercase(Locale("en"))}",
-                                color = MistyRose,
-                                style = MaterialTheme.typography.bodyLarge,
-                                modifier = Modifier.padding(start = 10.dp)
-                            )
-                            if (transaction.source == "sms") {
-                                Spacer(Modifier.weight(1f))
-                                if (showSmsSource) {
-                                    TextButton(onClick = { showSmsSource = false }) {
-                                        Text(text = "Hide")
-                                    }
-                                } else {
-                                    TextButton(onClick = { showSmsSource = true }) {
-                                        Text(text = "Show")
-                                    }
-                                }
-                            }
-                        }
-                        if (showSmsSource) {
-                            Text(text = transaction.body)
-                        }
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "Tags",
-                                color = secondaryInactive,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                            TextButton(onClick = { showSmsSource = true }) {
-                                Text(text = "+ Add Tag")
-                            }
-                        }
-
+                    } else {
+                        Text("Loading...")
                     }
                 }
-            } else {
-                Text("Loading...")
             }
         }
+    )
+
+}
+
+@Composable
+fun DetailRow(iconName: ImageVector, iconColor: Color, text: String, textColor: Color) {
+    Row(verticalAlignment = Alignment.Bottom) {
+        Icon(
+            imageVector = Icons.Filled.Wallet,
+            contentDescription = "income",
+            modifier = Modifier
+                .size(20.dp),
+            tint = CustomColors.onSecondary
+        )
+        Text(
+            text,
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 1,
+            modifier = Modifier
+                .padding(start = 8.dp)
+                .drawBehind {
+                    val strokeWidthPx = 1.dp.toPx()
+                    val verticalOffset = size.height
+                    drawLine(
+                        color = iconColor,
+                        strokeWidth = strokeWidthPx,
+                        start = Offset(0f, verticalOffset),
+                        end = Offset(size.width, verticalOffset)
+                    )
+                },
+            color = textColor
+        )
     }
 }

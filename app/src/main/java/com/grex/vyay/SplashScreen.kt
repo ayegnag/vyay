@@ -37,10 +37,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.grex.vyay.ui.theme.backgroundPrimaryBottom
-import com.grex.vyay.ui.theme.backgroundPrimaryTop
-import com.grex.vyay.ui.theme.primaryActive
-import com.grex.vyay.ui.theme.secondaryInactive
+import com.grex.vyay.ui.theme.CustomColors
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -57,11 +54,11 @@ fun SplashScreen(
     val systemUiController = rememberSystemUiController()
     DisposableEffect(systemUiController) {
         systemUiController.setStatusBarColor(
-            color = backgroundPrimaryTop,
+            color = CustomColors.backgroundPrimaryTop,
             darkIcons = false // Set to false for light icons
         )
         systemUiController.setNavigationBarColor(
-            color = backgroundPrimaryBottom,
+            color = CustomColors.backgroundPrimaryBottom,
             darkIcons = false // Set to false for light icons
         )
         onDispose {}
@@ -104,8 +101,8 @@ fun SplashScreen(
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        backgroundPrimaryTop,
-                        backgroundPrimaryBottom
+                        CustomColors.backgroundPrimaryTop,
+                        CustomColors.backgroundPrimaryBottom
                     )
                 )
             )
@@ -129,8 +126,8 @@ fun SplashScreen(
                 LinearProgressIndicator(
                     progress = { currentProgress },
                     modifier = Modifier.fillMaxWidth(),
-                    color = primaryActive,
-                    trackColor = secondaryInactive,
+                    color = CustomColors.primary,
+                    trackColor = CustomColors.onSecondaryInactive,
                 )
             }
 

@@ -85,7 +85,9 @@ interface AppDao {
             messageDate = :messageDate,
             source = :source,
             isTransaction = :isTransaction,
-            body = :body
+            body = :body,
+            tags = :tags,
+            category = :category
         WHERE 
             id = :id
             AND isManual = :isManual
@@ -105,7 +107,9 @@ interface AppDao {
         messageDate: String?,
         source: String,
         isTransaction: Boolean,
-        body: String
+        body: String,
+        tags: String?,
+        category: String?
     ): Int
 
     @Query(
@@ -134,7 +138,9 @@ interface AppDao {
             messageDate = transactionRecord.messageDate,
             source = transactionRecord.source,
             isTransaction = transactionRecord.isTransaction,
-            body = transactionRecord.body
+            body = transactionRecord.body,
+            tags = transactionRecord.tags,
+            category = transactionRecord.category
         )
     }
 }

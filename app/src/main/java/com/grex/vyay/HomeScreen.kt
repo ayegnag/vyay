@@ -25,9 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.grex.vyay.ui.theme.Grey
-import com.grex.vyay.ui.theme.backgroundPrimaryBottom
-import com.grex.vyay.ui.theme.backgroundPrimaryTop
+import com.grex.vyay.ui.theme.CustomColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,11 +38,11 @@ fun HomeScreen(activity: MainActivity, padding: PaddingValues) {
     val systemUiController = rememberSystemUiController()
     DisposableEffect(systemUiController) {
         systemUiController.setStatusBarColor(
-            color = backgroundPrimaryTop,
+            color = CustomColors.backgroundPrimaryTop,
             darkIcons = false // Set to false for light icons
         )
         systemUiController.setNavigationBarColor(
-            color = backgroundPrimaryTop,
+            color = CustomColors.backgroundPrimaryTop,
             darkIcons = false // Set to false for light icons
         )
         onDispose {}
@@ -67,8 +65,8 @@ fun HomeScreen(activity: MainActivity, padding: PaddingValues) {
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = backgroundPrimaryTop,
-                    titleContentColor = Grey,
+                    containerColor = CustomColors.backgroundPrimaryTop,
+                    titleContentColor = CustomColors.onPrimary,
                 ),
                 title = {
                     Text(
@@ -94,8 +92,8 @@ fun HomeScreen(activity: MainActivity, padding: PaddingValues) {
                     .background(
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                backgroundPrimaryTop,
-                                backgroundPrimaryBottom
+                                CustomColors.backgroundPrimaryTop,
+                                CustomColors.backgroundPrimaryBottom
                             )
                         )
                     )

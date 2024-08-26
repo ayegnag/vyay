@@ -30,7 +30,6 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -39,10 +38,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.grex.vyay.ui.theme.Grey
+import com.grex.vyay.ui.theme.CustomColors
 import com.grex.vyay.ui.theme.VyayTheme
-import com.grex.vyay.ui.theme.backgroundPrimaryBottom
-import com.grex.vyay.ui.theme.backgroundPrimaryTop
 
 @Composable
 fun OnboardingScreen(
@@ -53,13 +50,14 @@ fun OnboardingScreen(
 ) {
     var userName by remember { mutableStateOf(initialUserName) }
     val systemUiController = rememberSystemUiController()
+
     DisposableEffect(systemUiController) {
         systemUiController.setStatusBarColor(
-            color = backgroundPrimaryTop,
+            color = CustomColors.backgroundPrimaryTop,
             darkIcons = false // Set to false for light icons
         )
         systemUiController.setNavigationBarColor(
-            color = backgroundPrimaryBottom,
+            color = CustomColors.backgroundPrimaryBottom,
             darkIcons = false // Set to false for light icons
         )
         onDispose {}
@@ -70,8 +68,8 @@ fun OnboardingScreen(
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        backgroundPrimaryTop,
-                        backgroundPrimaryBottom
+                        CustomColors.backgroundPrimaryBottom,
+                        CustomColors.backgroundPrimaryTop
                     )
                 )
             )
@@ -108,7 +106,7 @@ fun OnboardingScreen(
             Text(
                 text ="Let's set up your profile.",
                 style = MaterialTheme.typography.headlineSmall,
-                color = Color.White,
+                color = CustomColors.onPrimary,
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -118,7 +116,7 @@ fun OnboardingScreen(
                     .width(280.dp)
                     .height(56.dp)
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Grey.copy(alpha = 0.1f))
+                    .background(CustomColors.onPrimaryInactive.copy(alpha = 0.1f))
                 )
                 OutlinedTextField(
                     value = userName,
@@ -127,17 +125,17 @@ fun OnboardingScreen(
                         Text(
                             "Your Name",
                             style = TextStyle(
-                                color = Grey,
+                                color = CustomColors.onPrimaryInactive,
                                 textAlign = TextAlign.Start
                             )
                         )
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = White,
-                        unfocusedBorderColor = Grey,
+                        focusedBorderColor = CustomColors.onPrimary,
+                        unfocusedBorderColor = CustomColors.onPrimaryInactive,
                     ),
                     singleLine = true,
-                    textStyle = TextStyle(color = White),
+                    textStyle = TextStyle(color = CustomColors.onPrimary),
                     modifier = Modifier
                         .align(Alignment.Center)
                 )
