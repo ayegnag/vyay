@@ -1,41 +1,62 @@
 package com.grex.vyay
 
+import android.content.Context
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.grex.vyay.ui.components.PieChartData
 import com.grex.vyay.ui.theme.CustomColors
+import java.text.NumberFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(activity: MainActivity, padding: PaddingValues) {
 
+    val applicationContext: Context = VyayApp.instance.applicationContext
+    val database: AppDatabase = AppDatabase.getDatabase(applicationContext)
+    val appDao: AppDao = database.appDao()
     val chartData = remember { mutableListOf<PieChartData>() }
     val userPreferences = UserPreferences(LocalContext.current)
     val userName = userPreferences.getUserName()
 
     val systemUiController = rememberSystemUiController()
+    val monthExpense = remember {
+        mutableDoubleStateOf(0.0)
+    }
+
     DisposableEffect(systemUiController) {
         systemUiController.setStatusBarColor(
             color = CustomColors.backgroundPrimaryTop,
@@ -48,18 +69,9 @@ fun HomeScreen(activity: MainActivity, padding: PaddingValues) {
         onDispose {}
     }
 
-//    LaunchedEffect(activity) {
-//        if (isPermissionGranted) {
-//        smsPermissionHandler.readAndStoreSms()
-//        smsCount = smsPermissionHandler.getSmsCount()
-//        totalSmsCount = smsPermissionHandler.getTotalSmsCount()
-//        chartData.clear()
-//        chartData.addAll(listOf(
-//            PieChartData(value = smsCount.toFloat(), color = MistyRose),
-//            PieChartData(value = totalSmsCount.toFloat(), color = ColumbiaBlue)
-//        ))
-//        }
-//    }
+    LaunchedEffect(Unit) {
+        monthExpense.doubleValue = appDao.getCurrentMonthExpense()
+    }
 
     Scaffold(
         topBar = {
@@ -89,21 +101,68 @@ fun HomeScreen(activity: MainActivity, padding: PaddingValues) {
             Box(
                 modifier = Modifier
                     .padding(paddingValues)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                CustomColors.backgroundPrimaryTop,
-                                CustomColors.backgroundPrimaryBottom
-                            )
-                        )
-                    )
+//                    .background(
+//                        brush = Brush.verticalGradient(
+//                            colors = listOf(
+//                                CustomColors.backgroundPrimaryTop,
+//                                CustomColors.backgroundPrimaryBottom
+//                            )
+//                        )
+//                    )
+                    .background(CustomColors.backgroundPrimaryBottom)
                     .fillMaxSize(),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.TopStart
             ) {
+                val painter = painterResource(id = R.drawable.dawnpeaks)
+                Image(
+                    painter = painter,
+                    contentDescription = "Dawn Background",
+                    contentScale = ContentScale.FillHeight,
+                    modifier = Modifier
+                        .fillMaxSize()
+//                        .offset(x = (1 * painter.intrinsicSize.width * 0.1f).dp)
+//                        .graphicsLayer { alpha = 0.15F }
+//                        .drawWithContent {
+//                            drawContent()
+//                            drawRect(
+//                                brush = Brush.verticalGradient(
+//                                    0.0f to Color.Transparent,
+//                                    0.1f to Color.Gray,
+//                                    0.2f to Color.Black,
+//                                    0.6f to Color.Gray,
+//                                    0.8f to Color.Transparent
+//                                ),
+//                                blendMode = BlendMode.DstIn
+//                            )
+//                        }
+//                        .blur(radius = 4.dp)
+                )
                 Column(
-                    modifier = Modifier.padding(padding)
+                    modifier = Modifier
+                        .padding(padding)
+                        .padding(start = 24.dp, end = 24.dp)
+                        .fillMaxSize()
                 ) {
-                    Greeting(userName)
+                    Spacer(modifier = Modifier.height(36.dp))
+                    Row {
+                        Column {
+                            Text(
+                                text = NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+                                    .format(monthExpense.doubleValue),
+                                color = CustomColors.primary,
+                                style = MaterialTheme.typography.headlineLarge,
+                                textAlign = TextAlign.Left
+                            )
+                            Text(
+                                text = "Expenses this month",
+                                color = CustomColors.onPrimaryDim,
+                                style = MaterialTheme.typography.labelSmall,
+                                textAlign = TextAlign.Left
+                            )
+                        }
+                    }
+
+//                    Greeting(userName)
 //            if (isPermissionGranted) {
 //                Row {
 //                    TotalSMSCount(totalSmsCount)

@@ -96,7 +96,7 @@ class SmsAnalysisService private constructor() {
                 val dateColumn = cursor.getColumnIndexOrThrow("date")
 
                 while (cursor.moveToNext()) {
-                    // Skip if SMS in unsupported
+                    // Skip if SMS is unsupported
                     val body = cursor.getString(bodyColumn)
                     val details = parser.parse(body) ?: continue
 

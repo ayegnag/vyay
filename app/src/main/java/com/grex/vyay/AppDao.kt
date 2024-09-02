@@ -143,4 +143,28 @@ interface AppDao {
             category = transactionRecord.category
         )
     }
+
+    @RewriteQueriesToDropUnusedColumns
+    @Query(
+        """
+    SELECT 
+        SUM(amount) AS total_amount
+    FROM 
+        transaction_records
+    WHERE 
+        amount IS NOT NULL
+        AND transactionType IN ('expense')
+        AND isTransaction = 1
+        AND strftime('%Y-%m', datetime(receivedOnDate / 1000, 'unixepoch')) = strftime('%Y-%m', 'now')
+"""
+    )
+    suspend fun getCurrentMonthExpense(): Double
+
+    // Separate Public function in-case we need a different conflict strategy here
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTransactionRecord(transactionRecord: TransactionRecord)
+
+    @Query("DELETE FROM transaction_records WHERE id = :id AND isManual = 1 ")
+    fun deleteManualRecord(id: Int)
+
 }

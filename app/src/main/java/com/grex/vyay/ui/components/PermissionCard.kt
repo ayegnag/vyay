@@ -1,4 +1,4 @@
-package com.grex.vyay
+package com.grex.vyay.ui.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize

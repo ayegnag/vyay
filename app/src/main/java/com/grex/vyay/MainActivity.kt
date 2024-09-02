@@ -30,11 +30,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.grex.vyay.ui.components.FooterNavBar
 import com.grex.vyay.ui.theme.CustomColors
 import com.grex.vyay.ui.theme.VyayTheme
 
 
-class MainActivity : ComponentActivity() {
+open class MainActivity : ComponentActivity() {
     lateinit var smsAnalysisService: SmsAnalysisService
     lateinit var settingsViewModel: SettingsViewModel
 
@@ -215,7 +216,6 @@ fun AppNavigation(activity: MainActivity, settingsViewModel: SettingsViewModel) 
             composable(Screen.AddTransaction.route) {
                 AddTransaction(
                     navController = navController,
-                    smsAnalysisService = activity.smsAnalysisService,
                     onAckUpdate = { value -> isTransactionRecordUpdated = value }
                 )
                 onScreenChange(screen = Screen.AddTransaction.route, navController) {

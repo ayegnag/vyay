@@ -1,4 +1,4 @@
-package com.grex.vyay
+package com.grex.vyay.ui.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn

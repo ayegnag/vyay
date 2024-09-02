@@ -1,4 +1,4 @@
-package com.grex.vyay
+package com.grex.vyay.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.grex.vyay.Screen
 import com.grex.vyay.ui.theme.CustomColors
 
 @Composable
@@ -86,8 +87,8 @@ fun FooterNavBar(navController: NavController) {
                 },
 //                label = { Text(text = screen.label) },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = CustomColors.primary,
-                    selectedTextColor = CustomColors.primary,
+                    selectedIconColor = CustomColors.activeAlt,
+                    selectedTextColor = CustomColors.activeAlt,
                     unselectedIconColor = CustomColors.onPrimary,
                     unselectedTextColor = CustomColors.onPrimary,
                     indicatorColor = CustomColors.backgroundPrimaryTop

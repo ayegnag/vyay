@@ -1,4 +1,4 @@
-package com.grex.vyay
+package com.grex.vyay.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -14,6 +14,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.CleaningServices
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.Icon
@@ -130,7 +131,7 @@ fun TagSelectionDialog(
     onTagsSelected: (List<String>) -> Unit
 ) {
     val expensePredefinedTags =
-        listOf("Groceries", "Bills", "EMI", "Fuel", "Rent", "Health", "Food", "Shopping", "Investment", "Monthly", "Annual", "Work", "Personal", "Shared", "Tax", "Subscription", "Gift", "Entertainment", "Education", "Travel", "Luxury")
+        listOf("Groceries", "Bills", "EMI", "Fuel", "Rent", "Health", "Food", "Shopping", "Investment", "Monthly", "Annual", "Work", "Personal", "Shared", "Tax", "Loan", "Subscription", "Gift", "Entertainment", "Education", "Travel", "Luxury")
     val incomePredefinedTags =
         listOf("Salary", "Bonus", "Commission", "Tax Refund", "Dividend", "Interest", "Rental Income", "Pension", "Gift", "Loan", "Reimbursement", "Cashback")
 
@@ -168,6 +169,12 @@ fun TagSelectionDialog(
                 Spacer(modifier = Modifier.height(16.dp))
                 Box(modifier = Modifier.fillMaxWidth()) {
                     IconButton(
+                        onClick = { selectedTags = emptySet() },
+                        modifier = Modifier.align(Alignment.CenterStart)
+                    ) {
+                        Icon(Icons.Filled.CleaningServices, contentDescription = "Confirm")
+                    }
+                    IconButton(
                         onClick = { onTagsSelected(selectedTags.toList()) },
                         modifier = Modifier.align(Alignment.CenterEnd)
                     ) {
@@ -183,16 +190,18 @@ fun TagSelectionDialog(
 fun SelectableTagPill(
     tag: String,
     isSelected: Boolean,
-    onTagSelected: (Boolean) -> Unit
+    onTagSelected: (Boolean) -> Unit,
+    tint: Color = CustomColors.primary,
+    textColor: Color = CustomColors.onPrimary
 ) {
-    val backgroundColor = if (isSelected) CustomColors.primary else Color.Transparent
-    val contentColor = if (isSelected) CustomColors.onPrimary else CustomColors.primary
+    val backgroundColor = if (isSelected) tint else Color.Transparent
+    val contentColor = if (isSelected) textColor else tint
 
     Surface(
         shape = RoundedCornerShape(16.dp),
         color = backgroundColor,
         contentColor = contentColor,
-        border = BorderStroke(1.dp, CustomColors.primary),
+        border = BorderStroke(1.dp, tint),
         modifier = Modifier.clickable { onTagSelected(!isSelected) }
     ) {
         Text(

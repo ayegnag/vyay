@@ -1,7 +1,8 @@
-package com.grex.vyay
+package com.grex.vyay.ui.components
 
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
@@ -13,8 +14,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -33,6 +37,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.grex.vyay.MonthlyTotal
+import com.grex.vyay.Utilities
 import com.grex.vyay.ui.theme.CustomColors
 import java.text.NumberFormat
 import java.util.Locale
@@ -81,58 +87,60 @@ fun ExpenseBarChart(
     maxAmount = maxOf(maxExpense, maxIncome)
     val roundedMaxAmount = roundUpToNiceNumber(maxAmount)
 
-    Row(modifier = modifier.fillMaxWidth()) {
-        // Amount levels
-        Column(
-            modifier = Modifier
-                .width(30.dp)
-                .height(200.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            val lineCount = 5
-            val numberFormat = NumberFormat.getCurrencyInstance(Locale.getDefault())
-            val symbol = numberFormat.currency?.symbol
-            for (i in lineCount downTo 0) {
-                val amount = roundedMaxAmount * i / lineCount
-                Text(
-                    text = "${symbol}${
-                        formatAmount(
-                            amount
-                        )
-                    }",
-                    style = MaterialTheme.typography.labelSmall,
-                    textAlign = TextAlign.Right,
-                    modifier = Modifier.fillMaxWidth(),
-                    color = CustomColors.onPrimary
-                )
-            }
-        }
-        // Graph
-        Column(modifier = modifier.fillMaxWidth()) {
-            Box(
+    Column(modifier = modifier.fillMaxWidth()) {
+        Row(modifier = modifier.fillMaxWidth()) {
+            // Amount levels
+            Column(
                 modifier = Modifier
-                    .height(200.dp)
-                    .fillMaxWidth()
-                    .horizontalScroll(scrollState)
+                    .width(30.dp)
+                    .height(200.dp),
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Canvas(
+                val lineCount = 5
+                val numberFormat = NumberFormat.getCurrencyInstance(Locale.getDefault())
+                val symbol = numberFormat.currency?.symbol
+                for (i in lineCount downTo 0) {
+                    val amount = roundedMaxAmount * i / lineCount
+                    Text(
+                        text = "${symbol}${
+                            formatAmount(
+                                amount
+                            )
+                        }",
+                        style = MaterialTheme.typography.labelSmall,
+                        textAlign = TextAlign.Right,
+                        modifier = Modifier.fillMaxWidth(),
+                        color = CustomColors.onPrimary
+                    )
+                }
+            }
+            // Graph
+            Column(modifier = modifier.fillMaxWidth()) {
+                Box(
                     modifier = Modifier
                         .height(200.dp)
-                        .width(
-                            (80.dp * expenses.size + leftPadding + spaceBetween * expenses.size).coerceAtLeast(
-                                LocalConfiguration.current.screenWidthDp.dp - 40.dp
+                        .fillMaxWidth()
+                        .horizontalScroll(scrollState)
+                ) {
+                    Canvas(
+                        modifier = Modifier
+                            .height(200.dp)
+                            .width(
+                                (80.dp * expenses.size + leftPadding + spaceBetween * expenses.size).coerceAtLeast(
+                                    LocalConfiguration.current.screenWidthDp.dp - 40.dp
+                                )
                             )
-                        )
-                        .pointerInput(Unit) {
-                            detectTapGestures { offset ->
-                                if (expenses.isNotEmpty()) {
-                                    val index = (offset.x / (size.width / expenses.size)).toInt()
-                                    val month = expenses[index].month
-                                    onItemClick(month)
+                            .pointerInput(Unit) {
+                                detectTapGestures { offset ->
+                                    if (expenses.isNotEmpty()) {
+                                        val index =
+                                            (offset.x / (size.width / expenses.size)).toInt()
+                                        val month = expenses[index].month
+                                        onItemClick(month)
+                                    }
                                 }
                             }
-                        }
-                ) {
+                    ) {
 //                    val colors = listOf(
 //                        ChampagnePink,
 //                        Linen,
@@ -146,26 +154,27 @@ fun ExpenseBarChart(
 //                        PowderBlue
 //                    )
 
-                    // Draw background lines
-                    val lineCount = 5
-                    for (i in 0..lineCount) {
-                        val y = size.height * (1 - i.toFloat() / lineCount)
-                        drawLine(
-                            color = CustomColors.secondaryInactive.copy(alpha = 0.5f),
-                            start = Offset(0f, y),
-                            end = Offset(size.width, y),
-                            strokeWidth = 1.dp.toPx()
-                        )
-                    }
+                        // Draw background lines
+                        val lineCount = 5
+                        for (i in 0..lineCount) {
+                            val y = size.height * (1 - i.toFloat() / lineCount)
+                            drawLine(
+                                color = CustomColors.secondaryInactive.copy(alpha = 0.5f),
+                                start = Offset(0f, y),
+                                end = Offset(size.width, y),
+                                strokeWidth = 1.dp.toPx()
+                            )
+                        }
 
 //                    val cornerRadius = 16.dp // .toPx()
-                    val cornerRadius = CornerRadius(36f, 36f)
-                    val barWidth = (size.width - leftPadding.toPx()) / expenses.size
-                    expenses.forEachIndexed { index, expense ->
+                        val cornerRadius = CornerRadius(36f, 36f)
+                        val barWidth = (size.width - leftPadding.toPx()) / expenses.size
+                        expenses.forEachIndexed { index, expense ->
 //                        val xOffset = leftPadding.toPx() + index * barWidth + barWidth * 0.05f
-                        val expenseBarHeight = (expense.totalAmount / maxAmount) * size.height
-                        val incomeBarHeight =
-                            (incomes.getOrNull(index)?.totalAmount ?: 0f) / maxAmount * size.height
+                            val expenseBarHeight = (expense.totalAmount / maxAmount) * size.height
+                            val incomeBarHeight =
+                                (incomes.getOrNull(index)?.totalAmount
+                                    ?: 0f) / maxAmount * size.height
 //                        val topLeftExpense = Offset(
 //                            (xOffset + barWidth * 0.4f),
 //                            size.height - expenseBarHeight
@@ -265,88 +274,123 @@ fun ExpenseBarChart(
 //                            color = CustomColors.expense
 //                        )
 
-                        // Income Bar
-                        val pathIncome = Path().apply {
-                            addRoundRect(
-                                RoundRect(
-                                    rect = Rect(
-                                        offset = Offset(leftPadding.toPx() + index * barWidth + barWidth * 0.07f, size.height - incomeBarHeight),
-                                        size = androidx.compose.ui.geometry.Size(barWidth * 0.38f, incomeBarHeight),
-                                    ),
-                                    topLeft = cornerRadius,
-                                    topRight = cornerRadius,
-                                )
-                            )
-                        }
-                        drawPath(pathIncome, color = CustomColors.incomeDim)
-
-                        // Expense Bar
-                        val pathExpense = Path().apply {
-                            addRoundRect(
-                                RoundRect(
-                                    rect = Rect(
-                                        offset = Offset(
-                                            leftPadding.toPx() + index * barWidth + barWidth * 0.42f + barWidth * 0.05f,
-                                            size.height - expenseBarHeight
+                            // Income Bar
+                            val pathIncome = Path().apply {
+                                addRoundRect(
+                                    RoundRect(
+                                        rect = Rect(
+                                            offset = Offset(
+                                                leftPadding.toPx() + index * barWidth + barWidth * 0.07f,
+                                                size.height - incomeBarHeight
+                                            ),
+                                            size = androidx.compose.ui.geometry.Size(
+                                                barWidth * 0.38f,
+                                                incomeBarHeight
+                                            ),
                                         ),
-                                        size = androidx.compose.ui.geometry.Size(barWidth * 0.38f, expenseBarHeight),
-                                    ),
-                                    topLeft = cornerRadius,
-                                    topRight = cornerRadius,
+                                        topLeft = cornerRadius,
+                                        topRight = cornerRadius,
+                                    )
                                 )
+                            }
+                            drawPath(pathIncome, color = CustomColors.incomeDim)
+
+                            // Expense Bar
+                            val pathExpense = Path().apply {
+                                addRoundRect(
+                                    RoundRect(
+                                        rect = Rect(
+                                            offset = Offset(
+                                                leftPadding.toPx() + index * barWidth + barWidth * 0.42f + barWidth * 0.05f,
+                                                size.height - expenseBarHeight
+                                            ),
+                                            size = androidx.compose.ui.geometry.Size(
+                                                barWidth * 0.38f,
+                                                expenseBarHeight
+                                            ),
+                                        ),
+                                        topLeft = cornerRadius,
+                                        topRight = cornerRadius,
+                                    )
+                                )
+                            }
+                            drawPath(pathExpense, color = CustomColors.primary)
+                        }
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = leftPadding)
+                        .horizontalScroll(scrollState),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    expenses.forEachIndexed { index, expense ->
+                        val income = incomes.getOrNull(index)
+                        val expenseAmount =
+                            NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+                                .format(expense.totalAmount)
+                        val incomeAmount = income?.let {
+                            NumberFormat.getCurrencyInstance(Locale("en", "IN"))
+                                .format(it.totalAmount)
+                        } ?: "-"
+
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .width(80.dp)
+                                .clickable { onItemClick(expense.month) }
+                        ) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = utils.getMonthName(expense.month),
+                                style = MaterialTheme.typography.labelSmall,
+                                textAlign = TextAlign.Center,
+                                color = CustomColors.onPrimary,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = incomeAmount,
+                                color = CustomColors.income,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.align(Alignment.Start)
+                            )
+                            Text(
+                                text = expenseAmount,
+                                color = CustomColors.primary,
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.align(Alignment.Start)
                             )
                         }
-                        drawPath(pathExpense, color = CustomColors.primary)
                     }
                 }
             }
-
-            Row(
+        }
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .fillMaxWidth()
+        ) {
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = leftPadding)
-                    .horizontalScroll(scrollState),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                expenses.forEachIndexed { index, expense ->
-                    val income = incomes.getOrNull(index)
-                    val expenseAmount =
-                        NumberFormat.getCurrencyInstance(Locale("en", "IN"))
-                            .format(expense.totalAmount)
-                    val incomeAmount = income?.let {
-                        NumberFormat.getCurrencyInstance(Locale("en", "IN")).format(it.totalAmount)
-                    } ?: "-"
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .width(80.dp)
-                            .clickable { onItemClick(expense.month) }
-                    ) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = utils.getMonthName(expense.month),
-                            style = MaterialTheme.typography.labelSmall,
-                            textAlign = TextAlign.Center,
-                            color = CustomColors.onPrimary,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = incomeAmount,
-                            color = CustomColors.income,
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.align(Alignment.Start)
-                        )
-                        Text(
-                            text = expenseAmount,
-                            color = CustomColors.primary,
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.align(Alignment.Start)
-                        )
-                    }
-                }
-            }
+                    .clip(shape = RoundedCornerShape(16.dp))
+                    .size(30.dp, 10.dp)
+                    .background(CustomColors.incomeDim)
+                    .align(Alignment.CenterVertically)
+            )
+            Text(text = "Income", modifier = Modifier.padding(start = 4.dp))
+            Spacer(modifier = Modifier.width(50.dp))
+            Box(
+                modifier = Modifier
+                    .clip(shape = RoundedCornerShape(16.dp))
+                    .size(30.dp, 10.dp)
+                    .background(CustomColors.primary)
+                    .align(Alignment.CenterVertically)
+            )
+            Text(text = "Expenses", modifier = Modifier.padding(start = 4.dp))
         }
     }
 }

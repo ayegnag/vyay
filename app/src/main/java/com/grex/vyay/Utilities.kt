@@ -10,7 +10,7 @@ import java.util.Locale
 class Utilities {
     fun getMonthName(dateString: String): String {
         val yearMonth = YearMonth.parse(dateString)
-        return yearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault()))
+        return yearMonth.format(DateTimeFormatter.ofPattern("MMM yyyy", Locale.getDefault()))
     }
     fun convertYearMonthToMonthName(yearMonth: String): String? {
         val sdf = SimpleDateFormat("yyyy-MM", Locale.getDefault())

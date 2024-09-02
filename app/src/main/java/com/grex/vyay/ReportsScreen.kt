@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.grex.vyay.ui.components.ExpenseBarChart
 import com.grex.vyay.ui.theme.CustomColors
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -37,6 +37,7 @@ import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.grex.vyay.ui.components.PermissionCard
 import com.grex.vyay.ui.theme.CustomColors
 
 @OptIn(ExperimentalPermissionsApi::class)
@@ -46,7 +47,8 @@ fun SplashScreen(
     onLoadingComplete: () -> Unit
 ) {
     val context = LocalContext.current
-    val permissionState = rememberPermissionState(Manifest.permission.READ_SMS)
+    val receivePermissionState = rememberPermissionState(Manifest.permission.RECEIVE_SMS)
+    val readPermissionState = rememberPermissionState(Manifest.permission.READ_SMS)
     val showRationale = remember { mutableStateOf(false) }
 
     val currentProgress by smsAnalysisService.progress.collectAsState()
@@ -71,16 +73,22 @@ fun SplashScreen(
             "expense reports. You can enable permission from App Settings."
 
     LaunchedEffect(Unit) {
-        if (!permissionState.status.isGranted) {
-            permissionState.launchPermissionRequest()
+        if (!receivePermissionState.status.isGranted) {
+            receivePermissionState.launchPermissionRequest()
+        }
+        if (!readPermissionState.status.isGranted) {
+            readPermissionState.launchPermissionRequest()
         }
     }
-    LaunchedEffect(permissionState.status.shouldShowRationale) {
-        showRationale.value = permissionState.status.shouldShowRationale
+    LaunchedEffect(receivePermissionState.status.shouldShowRationale) {
+        showRationale.value = receivePermissionState.status.shouldShowRationale
     }
-    LaunchedEffect(key1 = permissionState.status.isGranted) {
-        Log.d("INIT", "READ SMS Permission: $permissionState.status.isGranted")
-        if (permissionState.status.isGranted) {
+    LaunchedEffect(readPermissionState.status.shouldShowRationale) {
+        showRationale.value = readPermissionState.status.shouldShowRationale
+    }
+    LaunchedEffect(key1 = receivePermissionState.status.isGranted) {
+        Log.d("INIT", "READ SMS Permission: $receivePermissionState.status.isGranted")
+        if (receivePermissionState.status.isGranted) {
             showSmsPermissionDialog = false
             smsAnalysisService.startAnalysis()
             smsAnalysisService.progress.collect { progress ->
@@ -133,14 +141,14 @@ fun SplashScreen(
 
 
         }
-        if (!permissionState.status.isGranted) {
+        if (!receivePermissionState.status.isGranted) {
             PermissionCard(
                 permissionText = smsPermissionText,
                 declinedPermissionText = smsDeclinedPermissionText,
                 isPermanentlyDeclined = showRationale.value,
                 onOkClick = {
-                    if (permissionState.status.shouldShowRationale) {
-                        permissionState.launchPermissionRequest()
+                    if (receivePermissionState.status.shouldShowRationale) {
+                        receivePermissionState.launchPermissionRequest()
                     } else {
                         // Open app settings
                         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)

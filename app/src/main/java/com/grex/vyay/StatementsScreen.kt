@@ -26,15 +26,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.outlined.EmojiNature
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,9 +50,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
+import com.grex.vyay.ui.components.CustomScrollbar
+import com.grex.vyay.ui.components.SearchBar
 import com.grex.vyay.ui.theme.CustomColors
 import java.text.SimpleDateFormat
 import java.time.LocalDate
@@ -65,12 +73,15 @@ fun StatementsScreen(
     padding: PaddingValues,
     onTransactionClick: (TransactionRecord) -> Unit
 ) {
-    val applicationContext: Context = VyayApp.instance.applicationContext
+    val applicationContext: Context = LocalContext.current.applicationContext
     val database: AppDatabase = AppDatabase.getDatabase(applicationContext)
     val utils = Utilities()
     val appDao: AppDao = database.appDao()
     var transactionData by remember { mutableStateOf<List<TransactionRecord>>(emptyList()) }
+    var filteredTransactions by remember { mutableStateOf(transactionData) }
     var displayMonth by remember { mutableStateOf<String>("") }
+
+    var toggleSearch by remember { mutableStateOf(false) }
 
     LaunchedEffect(yearMonth) {
         val month = if (yearMonth == "{yearMonth}" || yearMonth == null) {
@@ -80,9 +91,10 @@ fun StatementsScreen(
         }
         Log.d("Transaction Month", month)
         transactionData = appDao.getTransactionsForMonth(month)
-        transactionData.forEach { transaction ->
-            Log.d("Transactions", transaction.toString())
-        }
+        filteredTransactions = transactionData
+//        transactionData.forEach { transaction ->
+//            Log.d("Transactions", transaction.toString())
+//        }
         displayMonth = month?.let { utils.convertYearMonthToMonthName(it) }.toString()
     }
 
@@ -118,44 +130,120 @@ fun StatementsScreen(
             )
         },
         content = { paddingValues ->
-            Box(
+            Column(
                 modifier = Modifier
-                    .fillMaxSize()
+                    .fillMaxWidth()
                     .padding(paddingValues)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                CustomColors.backgroundPrimaryTop,
-                                CustomColors.backgroundPrimaryBottom
-                            )
-                        )
-                    )
             ) {
-                val listState = rememberLazyListState()
-
-                LazyColumn(
-                    state = listState,
+                Box(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(end = 8.dp),
-                    contentPadding = padding
+                        .fillMaxWidth()
+                        .padding(bottom = 0.dp)
+                        .background(CustomColors.onTertiary)
                 ) {
-                    items(transactionData) { transaction ->
-                        TransactionItem(transaction = transaction,
-                            onClick = { onTransactionClick(transaction) })
+                    if (!toggleSearch) {
+                        IconButton(
+                            onClick = { toggleSearch = true },
+                            modifier = Modifier.padding(start = 8.dp)
+                        ) {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = "Search",
+                                tint = CustomColors.active
+                            )
+                        }
+                    }
+                    if (toggleSearch) {
+                        SearchBar(onSearchQueryChanged = { query ->
+                            filteredTransactions = filterTransactions(transactionData, query)
+                        }, onClose = {
+                            toggleSearch = false
+                        },
+                            modifier = Modifier.padding(start = 11.dp, top = 3.dp, bottom = 3.dp)
+                        )
                     }
                 }
-
-                CustomScrollbar(
+                Box(
                     modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .fillMaxHeight()
-                        .padding(end = 2.dp),
-                    scrollState = listState
-                )
+                        .fillMaxSize()
+                        .background(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    CustomColors.backgroundPrimaryTop,
+                                    CustomColors.backgroundPrimaryBottom
+                                )
+                            )
+                        )
+                ) {
+
+                    if (filteredTransactions.isEmpty()) {
+                        Box(modifier = Modifier.align(Alignment.Center)) {
+                            Column {
+                                Icon(
+                                    imageVector = Icons.Outlined.EmojiNature,
+                                    contentDescription = "Just Nature",
+                                    modifier = Modifier
+                                        .size(44.dp)
+                                        .align(Alignment.CenterHorizontally),
+                                    tint = CustomColors.onPrimary
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "so empty...",
+                                    color = CustomColors.onPrimary,
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                            }
+                        }
+                    } else {
+
+                        val listState = rememberLazyListState()
+
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(end = 8.dp),
+                            contentPadding = padding
+                        ) {
+                            items(filteredTransactions) { transaction ->
+                                TransactionItem(transaction = transaction,
+                                    onClick = { onTransactionClick(transaction) })
+                            }
+                        }
+
+                        CustomScrollbar(
+                            modifier = Modifier
+                                .align(Alignment.CenterEnd)
+                                .fillMaxHeight()
+                                .padding(end = 2.dp),
+                            scrollState = listState
+                        )
+                    }
+                }
             }
         }
     )
+}
+
+fun filterTransactions(
+    transactions: List<TransactionRecord>,
+    query: String
+): List<TransactionRecord> {
+    if (query.isBlank()) return transactions
+
+    val lowercaseQuery = query.lowercase()
+    return transactions.filter { transaction ->
+        transaction.address.lowercase().contains(lowercaseQuery) ||
+                transaction.transactionType?.lowercase()?.contains(lowercaseQuery) == true ||
+                transaction.currency?.lowercase()?.contains(lowercaseQuery) == true ||
+                transaction.amount?.toString()?.contains(lowercaseQuery) == true ||
+                transaction.transactionMode?.lowercase()?.contains(lowercaseQuery) == true ||
+                transaction.source.lowercase().contains(lowercaseQuery) ||
+                transaction.body.lowercase().contains(lowercaseQuery) ||
+                transaction.tags?.lowercase()?.contains(lowercaseQuery) == true ||
+                transaction.category?.lowercase()?.contains(lowercaseQuery) == true
+    }
 }
 
 @Composable
@@ -174,8 +262,8 @@ fun TransactionItem(
         if (!transaction.isTransaction) CustomColors.onPrimaryInactive
         else CustomColors.onPrimary
     val shapeColor =
-        if (!transaction.isTransaction) CustomColors.secondaryInactive
-        else CustomColors.secondary
+        if (!transaction.isTransaction) CustomColors.onPrimaryInactive
+        else CustomColors.onPrimaryDim
     val barColor = if (!transaction.isTransaction) CustomColors.secondaryInactive
     else CustomColors.surface
     val utils = Utilities()
@@ -198,8 +286,27 @@ fun TransactionItem(
             Box(
                 modifier = Modifier
                     .size(40.dp)
-                    .background(Color.Gray, CircleShape)
-            )
+//                    .background(Color.Gray, CircleShape)
+            ) {
+                Surface(
+                    shape = CircleShape,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            Color.Transparent
+                        )
+                ) {
+                    Icon(
+                        imageVector = TagIcon(transaction.tags),
+                        contentDescription = "Category Icon",
+                        tint = CustomColors.tertiary,
+                        modifier = Modifier
+                            .size(38.dp)
+                            .background(shapeColor)
+                            .padding(8.dp)
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.width(16.dp))
 
@@ -378,3 +485,41 @@ fun ifIncome(transactionType: String?): Boolean {
 //        }
 //    }
 //}
+class FakeMainActivity : MainActivity() {
+    // Override any necessary methods or properties here
+}
+
+@Composable
+fun StatementsScreenWithMockContext(
+    yearMonth: String?,
+    activity: MainActivity,
+    padding: PaddingValues,
+    onTransactionClick: (TransactionRecord) -> Unit
+) {
+    CompositionLocalProvider(
+        LocalContext provides LocalContext.current.applicationContext
+    ) {
+        StatementsScreen(
+            yearMonth = yearMonth,
+            activity = activity,
+            padding = padding,
+            onTransactionClick = onTransactionClick
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun StatementsScreenPreview() {
+    val fakeYearMonth = "2023-08"
+    val fakeActivity = FakeMainActivity()
+    val fakePadding = PaddingValues(16.dp)
+    val fakeOnTransactionClick: (TransactionRecord) -> Unit = {}
+
+    StatementsScreenWithMockContext(
+        yearMonth = fakeYearMonth,
+        activity = fakeActivity,
+        padding = fakePadding,
+        onTransactionClick = fakeOnTransactionClick
+    )
+}
