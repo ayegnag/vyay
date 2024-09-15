@@ -1,20 +1,26 @@
 package com.grex.vyay.ui.components
 
+import android.util.Log
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,7 +52,8 @@ fun CustomInputField(
     placeholder: String = "Enter amount",
     underlineColorFocused: Color = CustomColors.onPrimary,
     underlineColorUnfocused: Color = CustomColors.onPrimaryDim,
-    textColor: Color = CustomColors.onPrimary
+    textColor: Color = CustomColors.onPrimary,
+    onSaveClick: (() -> Unit)? = null
 ) {
     var isFocused by remember { mutableStateOf(false) }
     val currencySymbol = Currency.getInstance(java.util.Locale("en", "in")).symbol
@@ -62,6 +69,7 @@ fun CustomInputField(
             when {
                 inputType == InputFieldType.CURRENCY && !isFocused ->
                     formatCurrencyValue(value, numberFormat)
+
                 else -> value
             }
         )
@@ -106,6 +114,7 @@ fun CustomInputField(
                                 displayValue = newValue
                                 onValueChange(newValue)
                             }
+
                             InputFieldType.NUMBER, InputFieldType.CURRENCY -> {
                                 val numericValue = newValue.replace(Regex("[^0-9]"), "")
                                 if (numericValue.length <= 15) { // Prevent overflow
@@ -155,12 +164,40 @@ fun CustomInputField(
                     },
                     singleLine = true
                 )
-                Icon(
-                    imageVector = Icons.Default.Edit,
-                    contentDescription = "Edit",
-                    modifier = Modifier.size(32.dp).padding(end = 16.dp),
-                    tint = underlineColor
-                )
+                if (onSaveClick != null) {
+                    TextButton(
+                        onClick = {
+                            Log.d("startAutoAssignTagsWorker", "Clicked")
+                            onSaveClick()
+                        },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = CustomColors.active, // Color when enabled
+                            disabledContentColor = CustomColors.secondaryInactive   // Custom color when disabled
+                        ),
+                        enabled = displayValue.isNotEmpty()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = "Apply",
+                            tint = if (displayValue.isNotEmpty()) CustomColors.active else CustomColors.secondaryInactive,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Save",
+                            color = if (displayValue.isNotEmpty()) CustomColors.active else CustomColors.secondaryInactive
+                        )
+                    }
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit",
+                        modifier = Modifier
+                            .size(32.dp)
+                            .padding(end = 16.dp),
+                        tint = underlineColor
+                    )
+                }
             }
             Box(
                 modifier = Modifier

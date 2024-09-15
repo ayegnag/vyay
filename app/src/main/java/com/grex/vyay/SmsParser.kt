@@ -22,7 +22,7 @@ class SmsParser {
         Pattern.compile("(?:Rs\\.?|INR)\\s*(\\d+(?:,\\d+)*(?:\\.\\d{1,2})?)")
     private val bankPattern = Pattern.compile("(\\w+)\\s+Bank")
     private val transactionTypePattern =
-        Pattern.compile("(debited|credited|spent|deposited|Sent|Paid)")
+        Pattern.compile("(debited|credited|spent|deposited|Deducted|Sent|Paid)")
     private val declinedPattern = Pattern.compile("(?i)Declined")
     private val cardPattern = Pattern.compile("(?i)Card\\s+[x*]\\d{4}")
     private val upiPattern = Pattern.compile("(?i)UPI")
@@ -78,7 +78,7 @@ class SmsParser {
 
         // Determine transaction category
         val category = when {
-            transactionType in listOf("debited", "spent", "sent", "paid") -> "expense"
+            transactionType in listOf("debited", "spent", "deducted", "sent", "paid") -> "expense"
             transactionType in listOf("credited", "deposited") -> "income"
             investmentPattern.matcher(sms).find() -> "investment"
             else -> "transfer"

@@ -216,15 +216,19 @@ fun TransactionDetails(
             },
             actions = {
                 if (isTransactionUpdated) {
-                    IconButton(onClick = {
+                    TextButton(onClick = {
                         CoroutineScope(Dispatchers.Main).launch {
                             onSaveClick()
                         }
                     }) {
                         Icon(
                             imageVector = Icons.Default.Check,
-                            contentDescription = "Save Changes"
+                            contentDescription = "Save Changes",
+                            tint = CustomColors.active,
+                            modifier = Modifier.size(20.dp)
                         )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Save", color = CustomColors.active)
                     }
                 }
             },
@@ -543,10 +547,11 @@ fun TransactionDetailPreview() {
         isTransaction = true,
         body = "Amt Sent Rs.162.00 From HDFC Bank A/C *1331 To NEERAJA JAKHAR On 27-06 Ref 417943558423 Not You? Call 18002586161/SMS BLOCK UPI to 7308080808",
         category = "",
-        tags = "Groceries, Monthly, House1"
+        tags = "Groceries, Monthly, House1",
+        isProcessed = false
     )
     var isNotTransaction by remember { mutableStateOf(false) }
-    var isTransactionUpdated by remember { mutableStateOf(false) }
+    var isTransactionUpdated by remember { mutableStateOf(true) }
     var showSmsSource by remember { mutableStateOf<Boolean>(true) }
     var expenseColor by remember { mutableStateOf(CustomColors.expense) }
     var incomeColor by remember { mutableStateOf(CustomColors.income) }
@@ -600,15 +605,19 @@ fun TransactionDetailPreview() {
             },
             actions = {
                 if (isTransactionUpdated) {
-                    IconButton(onClick = {
+                    TextButton(onClick = {
                         CoroutineScope(Dispatchers.Main).launch {
                             /*TODO*/
                         }
                     }) {
                         Icon(
                             imageVector = Icons.Default.Check,
-                            contentDescription = "Save Changes"
+                            contentDescription = "Save Changes",
+                            tint = CustomColors.active,
+                            modifier = Modifier.size(20.dp)
                         )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Save", color = CustomColors.active)
                     }
                 }
             },

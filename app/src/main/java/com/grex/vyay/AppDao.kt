@@ -87,7 +87,8 @@ interface AppDao {
             isTransaction = :isTransaction,
             body = :body,
             tags = :tags,
-            category = :category
+            category = :category,
+            isProcessed = :isProcessed
         WHERE 
             id = :id
             AND isManual = :isManual
@@ -109,7 +110,8 @@ interface AppDao {
         isTransaction: Boolean,
         body: String,
         tags: String?,
-        category: String?
+        category: String?,
+        isProcessed: Boolean?
     ): Int
 
     @Query(
@@ -140,7 +142,8 @@ interface AppDao {
             isTransaction = transactionRecord.isTransaction,
             body = transactionRecord.body,
             tags = transactionRecord.tags,
-            category = transactionRecord.category
+            category = transactionRecord.category,
+            isProcessed = transactionRecord.isProcessed
         )
     }
 

@@ -124,17 +124,18 @@ class SmsAnalysisService private constructor() {
                             isManual = false,
                             address = address,
                             receivedOnDate = smsDate,
-                            transactionType = details?.transactionType,
-                            currency = details?.currency,
-                            amount = details?.amount,
-                            receivedAt = details?.receiver,
-                            transactionMode = details?.transactionMode,
-                            messageDate = details?.date,
+                            transactionType = details.transactionType ?: "",
+                            currency = details.currency,
+                            amount = details.amount,
+                            receivedAt = details.receiver,
+                            transactionMode = details.transactionMode,
+                            messageDate = details.date,
                             source = "sms",
                             isTransaction = true,
                             body = body,
                             category = "",
-                            tags = ""
+                            tags = "",
+                            isProcessed = false
                         )
 
                         val dateTime = epochToDateTime(smsDate)
@@ -226,3 +227,4 @@ fun epochToDateTime(epochMillis: Long): String {
     val zonedDateTime = instant.atZone(ZoneId.systemDefault())
     return zonedDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
 }
+

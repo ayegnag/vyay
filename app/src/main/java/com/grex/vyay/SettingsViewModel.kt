@@ -6,6 +6,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(private val appDao: AppDao) : ViewModel() {
+
     fun deleteAllMessages() {
         viewModelScope.launch(Dispatchers.IO) {
             appDao.deleteAllRecords()

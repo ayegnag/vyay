@@ -12,7 +12,7 @@ data class TransactionRecord(
     val isManual: Boolean,  // Flag to indicate if the record was manually inserted
     val address: String,
     val receivedOnDate: Long,
-    val transactionType: String?,   // income, expense
+    val transactionType: String,   // income, expense
     val currency: String?,
     val amount: Double?,
     val receivedAt: String?,
@@ -21,8 +21,9 @@ data class TransactionRecord(
     val source: String, // sms, manual
     var isTransaction: Boolean,
     val body: String,
-    val tags: String?,
-    val category: String?
+    var tags: String?,
+    val category: String?,
+    var isProcessed: Boolean?,
 )
 
 data class MonthlyTotal(

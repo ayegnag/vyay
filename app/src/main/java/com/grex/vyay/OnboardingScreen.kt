@@ -76,7 +76,7 @@ fun OnboardingScreen(
             .fillMaxSize()
     ) {
         Image(
-            painter = painterResource(id = R.drawable.dawnbackground),
+            painter = painterResource(id = R.drawable.dawnbackgroundhd),
             contentDescription = "Dawn Background",
             contentScale = ContentScale.FillWidth,
             modifier = Modifier

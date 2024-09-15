@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -34,7 +33,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.grex.vyay.ui.components.PermissionCard
@@ -47,8 +46,12 @@ fun SplashScreen(
     onLoadingComplete: () -> Unit
 ) {
     val context = LocalContext.current
-    val receivePermissionState = rememberPermissionState(Manifest.permission.RECEIVE_SMS)
-    val readPermissionState = rememberPermissionState(Manifest.permission.READ_SMS)
+    val permissionsState = rememberMultiplePermissionsState(
+        permissions = listOf(
+            Manifest.permission.RECEIVE_SMS,
+            Manifest.permission.READ_SMS
+        )
+    )
     val showRationale = remember { mutableStateOf(false) }
 
     val currentProgress by smsAnalysisService.progress.collectAsState()
@@ -68,27 +71,22 @@ fun SplashScreen(
     var showSmsPermissionDialog by remember { mutableStateOf(false) }
 
     val smsPermissionText = "This application needs access to your SMS to generate " +
-            "expense reports. You data remains in your Phone."
+            "expense reports. Your data remains on your phone."
     val smsDeclinedPermissionText = "It seems you have declined SMS permission. This application needs access to your SMS to generate " +
             "expense reports. You can enable permission from App Settings."
 
     LaunchedEffect(Unit) {
-        if (!receivePermissionState.status.isGranted) {
-            receivePermissionState.launchPermissionRequest()
-        }
-        if (!readPermissionState.status.isGranted) {
-            readPermissionState.launchPermissionRequest()
+        if (permissionsState.permissions.any { !it.status.isGranted }) {
+            permissionsState.launchMultiplePermissionRequest()
         }
     }
-    LaunchedEffect(receivePermissionState.status.shouldShowRationale) {
-        showRationale.value = receivePermissionState.status.shouldShowRationale
+
+    LaunchedEffect(permissionsState.permissions) {
+        showRationale.value = permissionsState.permissions.any { it.status.shouldShowRationale }
     }
-    LaunchedEffect(readPermissionState.status.shouldShowRationale) {
-        showRationale.value = readPermissionState.status.shouldShowRationale
-    }
-    LaunchedEffect(key1 = receivePermissionState.status.isGranted) {
-        Log.d("INIT", "READ SMS Permission: $receivePermissionState.status.isGranted")
-        if (receivePermissionState.status.isGranted) {
+
+    LaunchedEffect(permissionsState.allPermissionsGranted) {
+        if (permissionsState.allPermissionsGranted) {
             showSmsPermissionDialog = false
             smsAnalysisService.startAnalysis()
             smsAnalysisService.progress.collect { progress ->
@@ -101,7 +99,7 @@ fun SplashScreen(
         }
     }
 
-//    Compose ---------
+    // Compose UI
 
     Box(
         modifier = Modifier
@@ -138,17 +136,15 @@ fun SplashScreen(
                     trackColor = CustomColors.onSecondaryInactive,
                 )
             }
-
-
         }
-        if (!receivePermissionState.status.isGranted) {
+        if (showSmsPermissionDialog) {
             PermissionCard(
                 permissionText = smsPermissionText,
                 declinedPermissionText = smsDeclinedPermissionText,
                 isPermanentlyDeclined = showRationale.value,
                 onOkClick = {
-                    if (receivePermissionState.status.shouldShowRationale) {
-                        receivePermissionState.launchPermissionRequest()
+                    if (permissionsState.permissions.any { it.status.shouldShowRationale }) {
+                        permissionsState.launchMultiplePermissionRequest()
                     } else {
                         // Open app settings
                         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
@@ -160,4 +156,8 @@ fun SplashScreen(
         }
     }
 }
-
+//
+//private fun notifyUi(context: Context) {
+//    val intent = Intent("SMS_PROCESSED")
+//    LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
+//}

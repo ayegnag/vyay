@@ -156,7 +156,8 @@ fun AddTransaction(
             isTransaction = !isNotTransaction,
             body = transactionNote,
             tags = tagState.value,
-            category = null
+            category = null,
+            isProcessed = false
         )
         appDao.insertTransactionRecord(transactionData)
         onAckUpdate(true)
@@ -198,7 +199,7 @@ fun AddTransaction(
                     }
                 },
                 actions = {
-                    IconButton(
+                    TextButton(
                         onClick = {
                             CoroutineScope(Dispatchers.Main).launch {
                                 saveNewTransaction()
@@ -208,7 +209,18 @@ fun AddTransaction(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Check,
-                            contentDescription = "Save Changes"
+                            contentDescription = "Save Changes",
+                            tint = if (isFormValid) CustomColors.active else {
+                                CustomColors.onPrimaryInactive
+                            },
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "Save",
+                            color = if (isFormValid) CustomColors.active else {
+                                CustomColors.onPrimaryInactive
+                            }
                         )
                     }
                 },
@@ -524,7 +536,7 @@ fun createEmptyTransactionRecord(): TransactionRecord {
         isManual = false,
         address = "",
         receivedOnDate = 0L,
-        transactionType = null,
+        transactionType = "",
         currency = null,
         amount = null,
         receivedAt = null,
@@ -534,7 +546,8 @@ fun createEmptyTransactionRecord(): TransactionRecord {
         isTransaction = false,
         body = "",
         tags = null,
-        category = null
+        category = null,
+        isProcessed = false
     )
 }
 

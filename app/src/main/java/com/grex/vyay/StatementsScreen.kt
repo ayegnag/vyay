@@ -2,7 +2,9 @@ package com.grex.vyay
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SwapVert
 import androidx.compose.material.icons.outlined.EmojiNature
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -54,10 +57,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.SavedStateHandle
+import androidx.navigation.NavHostController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.grex.vyay.ui.components.CustomScrollbar
 import com.grex.vyay.ui.components.SearchBar
+import com.grex.vyay.ui.components.SortBar
+import com.grex.vyay.ui.components.SortType
 import com.grex.vyay.ui.theme.CustomColors
+import com.grex.vyay.ui.theme.VyayTheme
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -71,7 +79,8 @@ fun StatementsScreen(
     yearMonth: String?,
     activity: MainActivity,
     padding: PaddingValues,
-    onTransactionClick: (TransactionRecord) -> Unit
+    onTransactionClick: (TransactionRecord) -> Unit,
+    savedStateHandle: SavedStateHandle
 ) {
     val applicationContext: Context = LocalContext.current.applicationContext
     val database: AppDatabase = AppDatabase.getDatabase(applicationContext)
@@ -81,7 +90,9 @@ fun StatementsScreen(
     var filteredTransactions by remember { mutableStateOf(transactionData) }
     var displayMonth by remember { mutableStateOf<String>("") }
 
+    var showToolBar by remember { mutableStateOf(true) }
     var toggleSearch by remember { mutableStateOf(false) }
+    var toggleSort by remember { mutableStateOf(false) }
 
     LaunchedEffect(yearMonth) {
         val month = if (yearMonth == "{yearMonth}" || yearMonth == null) {
@@ -96,6 +107,16 @@ fun StatementsScreen(
 //            Log.d("Transactions", transaction.toString())
 //        }
         displayMonth = month?.let { utils.convertYearMonthToMonthName(it) }.toString()
+    }
+    val listState = rememberLazyListState()
+    val selectedTransactionId = remember { mutableStateOf<Int?>(null) }
+
+    LaunchedEffect(savedStateHandle) {
+        savedStateHandle.get<Int>("selectedTransactionId")?.let { id ->
+            selectedTransactionId.value = id
+            // Clear the saved state to avoid highlighting on future navigations
+            savedStateHandle["selectedTransactionId"] = null
+        }
     }
 
     val systemUiController = rememberSystemUiController()
@@ -141,16 +162,35 @@ fun StatementsScreen(
                         .padding(bottom = 0.dp)
                         .background(CustomColors.onTertiary)
                 ) {
-                    if (!toggleSearch) {
-                        IconButton(
-                            onClick = { toggleSearch = true },
+                    if (showToolBar) {
+                        Row(
                             modifier = Modifier.padding(start = 8.dp)
                         ) {
-                            Icon(
-                                Icons.Default.Search,
-                                contentDescription = "Search",
-                                tint = CustomColors.active
-                            )
+                            IconButton(
+                                onClick = {
+                                    toggleSearch = true
+                                    showToolBar = false
+                                }
+                            ) {
+                                Icon(
+                                    Icons.Default.Search,
+                                    contentDescription = "Search",
+                                    tint = CustomColors.active
+                                )
+                            }
+                            IconButton(
+                                onClick = {
+                                    toggleSort = true
+                                    showToolBar = false
+                                },
+                                modifier = Modifier.padding(start = 8.dp)
+                            ) {
+                                Icon(
+                                    Icons.Default.SwapVert,
+                                    contentDescription = "Sort",
+                                    tint = CustomColors.active
+                                )
+                            }
                         }
                     }
                     if (toggleSearch) {
@@ -158,8 +198,21 @@ fun StatementsScreen(
                             filteredTransactions = filterTransactions(transactionData, query)
                         }, onClose = {
                             toggleSearch = false
+                            showToolBar = true
                         },
-                            modifier = Modifier.padding(start = 11.dp, top = 3.dp, bottom = 3.dp)
+                            modifier = Modifier
+                                .padding(start = 11.dp, top = 3.dp, bottom = 3.dp)
+                        )
+                    }
+                    if (toggleSort) {
+                        SortBar(onSortTypeChanged = { type ->
+                            filteredTransactions = sortTransactions(filteredTransactions, type)
+                        }, onClose = {
+                            toggleSort = false
+                            showToolBar = true
+                        },
+                            modifier = Modifier
+                                .padding(start = 11.dp, top = 3.dp, bottom = 3.dp)
                         )
                     }
                 }
@@ -175,6 +228,16 @@ fun StatementsScreen(
                             )
                         )
                 ) {
+//                    val painter = painterResource(id = R.drawable.darkfoggyvalley)
+//                    Image(
+//                        painter = painter,
+//                        contentDescription = "Dawn Background",
+//                        contentScale = ContentScale.FillHeight,
+//                        alignment = BiasAlignment(0f, 1f),
+//                        modifier = Modifier
+//                            .fillMaxSize()
+//                            .blur(radius = 4.dp)
+//                    )
 
                     if (filteredTransactions.isEmpty()) {
                         Box(modifier = Modifier.align(Alignment.Center)) {
@@ -197,8 +260,6 @@ fun StatementsScreen(
                         }
                     } else {
 
-                        val listState = rememberLazyListState()
-
                         LazyColumn(
                             state = listState,
                             modifier = Modifier
@@ -208,6 +269,7 @@ fun StatementsScreen(
                         ) {
                             items(filteredTransactions) { transaction ->
                                 TransactionItem(transaction = transaction,
+                                    isSelected = transaction.id == selectedTransactionId.value,
                                     onClick = { onTransactionClick(transaction) })
                             }
                         }
@@ -246,12 +308,27 @@ fun filterTransactions(
     }
 }
 
+fun sortTransactions(
+    transactions: List<TransactionRecord>,
+    sortType: SortType
+): List<TransactionRecord> {
+    return when (sortType) {
+        SortType.ASCENDING -> transactions.sortedBy { it.receivedOnDate }
+        SortType.DESCENDING -> transactions.sortedByDescending { it.receivedOnDate }
+        SortType.GROUP -> transactions.groupBy {
+            it.tags?.split(",")?.firstOrNull()?.trim() ?: "Uncategorized"
+        }.flatMap { (_, group) ->
+            group.sortedByDescending { it.receivedOnDate }
+        }
+    }
+}
+
 @Composable
 fun TransactionItem(
     transaction: TransactionRecord,
+    isSelected: Boolean,
     onClick: () -> Unit
 ) {
-
     val isIncome = ifIncome(transaction.transactionType)
     val amountColor =
         if (!transaction.isTransaction) CustomColors.onPrimaryInactive
@@ -267,6 +344,12 @@ fun TransactionItem(
     val barColor = if (!transaction.isTransaction) CustomColors.secondaryInactive
     else CustomColors.surface
     val utils = Utilities()
+    val borderStroke = if (isSelected) {
+        BorderStroke(2.dp, CustomColors.primary)
+    } else {
+        BorderStroke(0.dp, Color.Transparent)
+    }
+    val tagName = transaction.tags?.split(",")?.firstOrNull()?.trim()
 
     Row(
         modifier = Modifier
@@ -274,7 +357,8 @@ fun TransactionItem(
             .padding(8.dp)
             .clickable(onClick = onClick)
             .clip(shape = RoundedCornerShape(36.dp))
-            .background(barColor),
+            .background(barColor)
+            .border(borderStroke, shape = RoundedCornerShape(36.dp)),
         verticalAlignment = Alignment.CenterVertically
     ) {
         // Placeholder for icon
@@ -318,7 +402,7 @@ fun TransactionItem(
                     color = labelColor
                 )
                 Text(
-                    text = transaction.transactionType ?: "Unknown",
+                    text = tagName?.takeIf { it.isNotEmpty() } ?: transaction.transactionType,
                     style = MaterialTheme.typography.bodySmall,
                     color = labelColor
                 )
@@ -355,136 +439,184 @@ fun ifIncome(transactionType: String?): Boolean {
 }
 
 
-//@Preview(showBackground = true, name = "Standard")
-//@Composable
-//fun StatementPagePreview() {
-//    val transactionData = listOf(
-//        TransactionRecord(
-//            _id = 156,
-//            address = "JM-SBIMFD",
-//            receivedOnDate = 1717655149218,
-//            transactionType = null,
-//            currency = "INR",
-//            amount = 1.400208E7,
-//            receivedAt = null,
-//            transactionMode = null,
-//            messageDate = null,
-//            body = "Dear Investor, Purchase - Systematic in Folio 14002080 in Fund : SBI Magnum Global Fund -Reg G for date 05-Jun-2024 for amount of INR 1,999.90 at NAV of 352.6899 is processed and 5.670 units have been allotted - SBIMF"
-//        ),
-//        TransactionRecord(
-//            _id = 155,
-//            address = "AD-HDFCBK",
-//            receivedOnDate = 1717652486418,
-//            transactionType = "spent",
-//            currency = "Rs.",
-//            amount = 700.0,
-//            receivedAt = "Block & Reissue Call 18002586161/SMS BLOCK CC 4216 to 7308080808",
-//            transactionMode = "Card",
-//            messageDate = "2024-06-06",
-//            body = "Rs.700 spent on HDFC Bank Card x4216 at _SURYA CHILDRENS .. on 2024-06-06:11:11:18.Not U? To Block & Reissue Call 18002586161/SMS BLOCK CC 4216 to 7308080808"
-//        ),
-//        TransactionRecord(
-//            _id = 154,
-//            address = "JM-SBIMFD",
-//            receivedOnDate = 1717647610599,
-//            transactionType = null,
-//            currency = "null",
-//            amount = 3.0,
-//            receivedAt = null,
-//            transactionMode = null,
-//            messageDate = null,
-//            body = "Dear Investor, Please click the link https://cams.co.in/3WjJNcPjrpg & enter PAN/FOLIO NO. to view statement of account for your latest transaction in Folio No. XXXXX004 - SBIMF"
-//        ),
-//        TransactionRecord(
-//            _id = 153,
-//            address = "JM-SBIMFD",
-//            receivedOnDate = 1717640163757,
-//            transactionType = null,
-//            currency = "INR",
-//            amount = 1.4002004E7,
-//            receivedAt = null,
-//            transactionMode = null,
-//            messageDate = null,
-//            body = "Dear Investor, Purchase- Systematic in Folio 14002004 in Fund : SBI Blue Chip Fund Reg Plan-G for date 05-Jun-2024 for amount of INR 999.95 at NAV of 83.1941 is processed and 12.019 units have been allotted - SBIMF"
-//        ),
-//        TransactionRecord(
-//            _id = 223,
-//            address = "VD-HDFCBK",
-//            receivedOnDate = 1718271274468,
-//            transactionType = "deposited",
-//            currency = "INR",
-//            amount = 20000.0,
-//            receivedAt = null,
-//            transactionMode = null,
-//            messageDate = "13-JUN-24",
-//            body = "Update! INR 20,000.00 deposited in HDFC Bank A/c XX1331 on 13-JUN-24 for NEFT Cr-SBIN0003977-Sbi lho-Gangeya Upadhyaya-SBIN524165245332.Avl bal INR 4,14,270.01. Cheque deposits in A/C are subject to clearing"
-//        ),
-//        TransactionRecord(
-//            _id = 149,
-//            address = "AD-HDFCBK",
-//            receivedOnDate = 1717577839910,
-//            transactionType = "debited",
-//            currency = "INR",
-//            amount = 1000.0,
-//            receivedAt = null,
-//            transactionMode = null,
-//            messageDate = null,
-//            body = "INR 1000.00 debited to HDFC Bank A/C No XXXXXXXXXX1331 towards COMPUTER AGE MANAGEMENT SERVICES PVT LTD / 14002004/SBIMF/590700109312  with UMRN HDFC9201711800019311"
-//        ),
-//        TransactionRecord(
-//            _id = 147,
-//            address = "AD-HDFCBK",
-//            receivedOnDate = 1717575623196,
-//            transactionType = "debited",
-//            currency = "INR",
-//            amount = 2000.0,
-//            receivedAt = null,
-//            transactionMode = null,
-//            messageDate = null,
-//            body = "INR 2000.00 debited to HDFC Bank A/C No XXXXXXXXXX1331 towards COMPUTER AGE MANAGEMENT SERVICES PVT LTD / 14002080/SBIMF/590700109311  with UMRN HDFC9201711800019310"
-//        ),
-//        TransactionRecord(
-//            _id = 145,
-//            address = "AD-HDFCBK",
-//            receivedOnDate = 1717570602279,
-//            transactionType = "sent",
-//            currency = "Rs.",
-//            amount = 5500.0,
-//            receivedAt = "IndianClearingCorporation",
-//            transactionMode = "UPI",
-//            messageDate = "05 - 06",
-//            body = "Amt Sent Rs.5500.00 From HDFC Bank A/C *1331 To IndianClearingCorporation On 05-06 Ref 415795307686 Not You? Call 18002586161/SMS BLOCK UPI to 7308080808"
-//        ),
-//    )
-//
-//    VyayTheme {
-//        Box(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .background(
-//                    brush = Brush.verticalGradient(
-//                        colors = listOf(
-//                            MaterialTheme.colorScheme.background,
-//                            CustomColors.backgroundPrimaryBottom
-//                        )
-//                    )
-//                )
-//        ) {
-//            val listState = rememberLazyListState()
-//
-//            LazyColumn(
-//                state = listState,
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .padding(end = 8.dp)
-//            ) {
-//                items(transactionData) { transaction ->
-//                    TransactionItem(transaction)
-//                }
-//            }
-//        }
-//    }
-//}
+@Preview(showBackground = true, name = "Standard")
+@Composable
+fun StatementPagePreview() {
+    val transactionData = listOf(
+        TransactionRecord(
+            id = 156,
+            address = "JM-SBIMFD",
+            receivedOnDate = 1717655149218,
+            transactionType = "expense",
+            currency = "INR",
+            amount = 1.400208E7,
+            receivedAt = null,
+            transactionMode = null,
+            messageDate = null,
+            body = "Dear Investor, Purchase - Systematic in Folio 14002080 in Fund : SBI Magnum Global Fund -Reg G for date 05-Jun-2024 for amount of INR 1,999.90 at NAV of 352.6899 is processed and 5.670 units have been allotted - SBIMF",
+            tags = "investment",
+            category = "",
+            isProcessed = false,
+            isManual = false,
+            isTransaction = true,
+            source = "sms",
+        ),
+        TransactionRecord(
+            id = 155,
+            address = "AD-HDFCBK",
+            receivedOnDate = 1717652486418,
+            transactionType = "spent",
+            currency = "Rs.",
+            amount = 700.0,
+            receivedAt = "Block & Reissue Call 18002586161/SMS BLOCK CC 4216 to 7308080808",
+            transactionMode = "Card",
+            messageDate = "2024-06-06",
+            body = "Rs.700 spent on HDFC Bank Card x4216 at _SURYA CHILDRENS .. on 2024-06-06:11:11:18.Not U? To Block & Reissue Call 18002586161/SMS BLOCK CC 4216 to 7308080808",
+            tags = "",
+            category = "",
+            isProcessed = false,
+            isManual = false,
+            isTransaction = true,
+            source = "sms",
+        ),
+        TransactionRecord(
+            id = 154,
+            address = "JM-SBIMFD",
+            receivedOnDate = 1717647610599,
+            transactionType = "expense",
+            currency = "null",
+            amount = 3.0,
+            receivedAt = null,
+            transactionMode = null,
+            messageDate = null,
+            body = "Dear Investor, Please click the link https://cams.co.in/3WjJNcPjrpg & enter PAN/FOLIO NO. to view statement of account for your latest transaction in Folio No. XXXXX004 - SBIMF",
+            tags = "",
+            category = "",
+            isProcessed = false,
+            isManual = false,
+            isTransaction = true,
+            source = "sms",
+        ),
+        TransactionRecord(
+            id = 153,
+            address = "JM-SBIMFD",
+            receivedOnDate = 1717640163757,
+            transactionType = "expense",
+            currency = "INR",
+            amount = 1.4002004E7,
+            receivedAt = null,
+            transactionMode = null,
+            messageDate = null,
+            body = "Dear Investor, Purchase- Systematic in Folio 14002004 in Fund : SBI Blue Chip Fund Reg Plan-G for date 05-Jun-2024 for amount of INR 999.95 at NAV of 83.1941 is processed and 12.019 units have been allotted - SBIMF",
+            tags = "",
+            category = "",
+            isProcessed = false,
+            isManual = false,
+            isTransaction = true,
+            source = "sms",
+        ),
+        TransactionRecord(
+            id = 223,
+            address = "VD-HDFCBK",
+            receivedOnDate = 1718271274468,
+            transactionType = "deposited",
+            currency = "INR",
+            amount = 20000.0,
+            receivedAt = null,
+            transactionMode = null,
+            messageDate = "13-JUN-24",
+            body = "Update! INR 20,000.00 deposited in HDFC Bank A/c XX1331 on 13-JUN-24 for NEFT Cr-SBIN0003977-Sbi lho-Gangeya Upadhyaya-SBIN524165245332.Avl bal INR 4,14,270.01. Cheque deposits in A/C are subject to clearing",
+            tags = "",
+            category = "",
+            isProcessed = false,
+            isManual = false,
+            isTransaction = true,
+            source = "sms",
+        ),
+        TransactionRecord(
+            id = 149,
+            address = "AD-HDFCBK",
+            receivedOnDate = 1717577839910,
+            transactionType = "debited",
+            currency = "INR",
+            amount = 1000.0,
+            receivedAt = null,
+            transactionMode = null,
+            messageDate = null,
+            body = "INR 1000.00 debited to HDFC Bank A/C No XXXXXXXXXX1331 towards COMPUTER AGE MANAGEMENT SERVICES PVT LTD / 14002004/SBIMF/590700109312  with UMRN HDFC9201711800019311",
+            tags = "",
+            category = "",
+            isProcessed = false,
+            isManual = false,
+            isTransaction = true,
+            source = "sms",
+        ),
+        TransactionRecord(
+            id = 147,
+            address = "AD-HDFCBK",
+            receivedOnDate = 1717575623196,
+            transactionType = "debited",
+            currency = "INR",
+            amount = 2000.0,
+            receivedAt = null,
+            transactionMode = null,
+            messageDate = null,
+            body = "INR 2000.00 debited to HDFC Bank A/C No XXXXXXXXXX1331 towards COMPUTER AGE MANAGEMENT SERVICES PVT LTD / 14002080/SBIMF/590700109311  with UMRN HDFC9201711800019310",
+            tags = "",
+            category = "",
+            isProcessed = false,
+            isManual = false,
+            isTransaction = true,
+            source = "sms",
+        ),
+        TransactionRecord(
+            id = 145,
+            address = "AD-HDFCBK",
+            receivedOnDate = 1717570602279,
+            transactionType = "sent",
+            currency = "Rs.",
+            amount = 5500.0,
+            receivedAt = "IndianClearingCorporation",
+            transactionMode = "UPI",
+            messageDate = "05 - 06",
+            body = "Amt Sent Rs.5500.00 From HDFC Bank A/C *1331 To IndianClearingCorporation On 05-06 Ref 415795307686 Not You? Call 18002586161/SMS BLOCK UPI to 7308080808",
+            tags = "",
+            category = "",
+            isProcessed = false,
+            isManual = false,
+            isTransaction = true,
+            source = "sms",
+        ),
+    )
+
+    VyayTheme {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            CustomColors.backgroundPrimaryTop,
+                            CustomColors.backgroundPrimaryBottom
+                        )
+                    )
+                )
+        ) {
+            val listState = rememberLazyListState()
+
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(end = 8.dp)
+            ) {
+                items(transactionData) { transaction ->
+                    TransactionItem(transaction, isSelected = (transaction.id == 155), onClick = {})
+                }
+            }
+        }
+    }
+}
 class FakeMainActivity : MainActivity() {
     // Override any necessary methods or properties here
 }
@@ -496,6 +628,8 @@ fun StatementsScreenWithMockContext(
     padding: PaddingValues,
     onTransactionClick: (TransactionRecord) -> Unit
 ) {
+    val navController = NavHostController(activity)
+    val savedStateHandle = navController.currentBackStackEntry?.savedStateHandle
     CompositionLocalProvider(
         LocalContext provides LocalContext.current.applicationContext
     ) {
@@ -503,7 +637,8 @@ fun StatementsScreenWithMockContext(
             yearMonth = yearMonth,
             activity = activity,
             padding = padding,
-            onTransactionClick = onTransactionClick
+            onTransactionClick = onTransactionClick,
+            savedStateHandle = savedStateHandle?: SavedStateHandle()
         )
     }
 }
