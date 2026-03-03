@@ -1,0 +1,94 @@
+[
+  {
+    "text": "Your a/c XX1234 has been debited for Rs.500.00 on 01-Jan-2024. Avl Bal: Rs.12,500.00",
+    "entities": [
+      {"start": 11, "end": 17, "label": "ACCOUNT"},
+      {"start": 38, "end": 46, "label": "AMOUNT"},
+      {"start": 50, "end": 61, "label": "DATE"},
+      {"start": 72, "end": 83, "label": "BALANCE"}
+    ]
+  },
+  {
+    "text": "INR 2,300.00 credited to your account **5678 from HDFC Bank on 15/02/2024. Balance: INR 45,000.00",
+    "entities": [
+      {"start": 0, "end": 12, "label": "AMOUNT"},
+      {"start": 40, "end": 44, "label": "ACCOUNT"},
+      {"start": 50, "end": 59, "label": "MERCHANT"},
+      {"start": 63, "end": 73, "label": "DATE"},
+      {"start": 84, "end": 97, "label": "BALANCE"}
+    ]
+  },
+  {
+    "text": "Txn of Rs1500 done from SBI a/c no XX9012 at AMAZON on 20-Mar-24. Bal Rs.8750",
+    "entities": [
+      {"start": 7, "end": 13, "label": "AMOUNT"},
+      {"start": 36, "end": 42, "label": "ACCOUNT"},
+      {"start": 46, "end": 52, "label": "MERCHANT"},
+      {"start": 56, "end": 65, "label": "DATE"},
+      {"start": 70, "end": 77, "label": "BALANCE"}
+    ]
+  },
+  {
+    "text": "Alert: Rs. 750 debited from acct ending 3344 at Swiggy. Available balance is Rs. 5,230",
+    "entities": [
+      {"start": 7, "end": 14, "label": "AMOUNT"},
+      {"start": 40, "end": 44, "label": "ACCOUNT"},
+      {"start": 48, "end": 54, "label": "MERCHANT"},
+      {"start": 78, "end": 87, "label": "BALANCE"}
+    ]
+  },
+  {
+    "text": "UPI: Rs.299 paid to PhonePe Merchant. UPI Ref:123456789. A/c XX7890 debited. Bal:Rs.14,501",
+    "entities": [
+      {"start": 5, "end": 11, "label": "AMOUNT"},
+      {"start": 20, "end": 36, "label": "MERCHANT"},
+      {"start": 62, "end": 68, "label": "ACCOUNT"},
+      {"start": 80, "end": 90, "label": "BALANCE"}
+    ]
+  },
+  {
+    "text": "Your account 1234 has been credited with USD 500 by Wire Transfer. New balance: USD 3,200",
+    "entities": [
+      {"start": 12, "end": 16, "label": "ACCOUNT"},
+      {"start": 44, "end": 51, "label": "AMOUNT"},
+      {"start": 55, "end": 68, "label": "MERCHANT"},
+      {"start": 81, "end": 89, "label": "BALANCE"}
+    ]
+  },
+  {
+    "text": "Debit of $120.50 from checking acct **2233 at Netflix on Apr 5 2024. Avail bal: $2,890.00",
+    "entities": [
+      {"start": 9, "end": 16, "label": "AMOUNT"},
+      {"start": 37, "end": 41, "label": "ACCOUNT"},
+      {"start": 45, "end": 52, "label": "MERCHANT"},
+      {"start": 56, "end": 67, "label": "DATE"},
+      {"start": 80, "end": 89, "label": "BALANCE"}
+    ]
+  },
+  {
+    "text": "ICICI Bank: A/C XX4567 debited INR 3,499 for Amazon.in. Avl Bal INR 22,341. If not you call 1800",
+    "entities": [
+      {"start": 12, "end": 18, "label": "ACCOUNT"},
+      {"start": 28, "end": 40, "label": "AMOUNT"},
+      {"start": 45, "end": 54, "label": "MERCHANT"},
+      {"start": 61, "end": 74, "label": "BALANCE"}
+    ]
+  },
+  {
+    "text": "Transaction alert: Rs 10,000.00 withdrawn at ATM on 12-12-2023. Balance: Rs 90,450.00",
+    "entities": [
+      {"start": 19, "end": 31, "label": "AMOUNT"},
+      {"start": 45, "end": 52, "label": "MERCHANT"},
+      {"start": 53, "end": 63, "label": "DATE"},
+      {"start": 73, "end": 85, "label": "BALANCE"}
+    ]
+  },
+  {
+    "text": "Dear Customer, Rs.5,000 has been transferred from your a/c XX6677. Available Balance: Rs.15,600",
+    "entities": [
+      {"start": 15, "end": 22, "label": "AMOUNT"},
+      {"start": 61, "end": 67, "label": "ACCOUNT"},
+      {"start": 87, "end": 95, "label": "BALANCE"}
+    ]
+  }
+]

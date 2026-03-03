@@ -1,0 +1,44 @@
+# SMS NER Training Pipeline — Python Dependencies
+# ─────────────────────────────────────────────────
+# Install (CUDA / CPU):
+#   pip install -r requirements.txt
+#
+# Install (AMD ROCm 6.1):
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.1
+#   pip install -r requirements.txt --ignore-requires-python
+#
+# Python >= 3.9 required
+
+# ── Core ML ───────────────────────────────────────
+# torch is pinned here to BLOCK transitive deps from pulling 2.4.1 from PyPI.
+# After running this file, reinstall the ROCm build to get GPU support:
+#
+#   pip install torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 \
+#       --index-url https://download.pytorch.org/whl/rocm6.1 --force-reinstall
+#
+# The pin here just prevents any package in this file from silently
+# downgrading torch mid-install.
+torch==2.6.0
+transformers>=4.46.0
+datasets>=2.19.0
+
+# ── Model export → TF Lite ────────────────────────
+# litert-torch is Google's current PyTorch → TFLite export path.
+# ai-edge-torch was the prior name — both are supported by train_sms_ner.py
+# but litert-torch is the one receiving updates.
+#
+# Do NOT install optimum[exporters] — the tflite submodule was removed in 2.x
+# and the extra 'exporters' no longer exists as of optimum 2.1.0+.
+litert-torch>=0.0.1    # Install with: pip install litert-torch --no-deps (its pinned torch dep overwrites ROCm/CUDA builds otherwise)
+
+# ── Training utilities ────────────────────────────
+scikit-learn>=1.4.0
+seqeval>=1.2.2          # Entity-level F1 metric (standard for NER)
+numpy>=1.26.0
+accelerate>=0.29.0      # HuggingFace trainer backend; handles device placement
+
+# ── Data toolkit ──────────────────────────────────
+# (data_toolkit.py uses only stdlib: json, random, re — no extra deps)
+
+# ── Tokenizer backend ────────────────────────────────────────────────
+sentencepiece>=0.1.99   # Required for bert-tiny tokenizer. No torch dep, no version conflicts.
