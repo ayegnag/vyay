@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -34,13 +33,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
-import com.google.accompanist.permissions.rememberPermissionState
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.shouldShowRationale
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
-import com.grex.vyay.ui.theme.backgroundPrimaryBottom
-import com.grex.vyay.ui.theme.backgroundPrimaryTop
-import com.grex.vyay.ui.theme.primaryActive
-import com.grex.vyay.ui.theme.secondaryInactive
+import com.grex.vyay.ui.components.PermissionCard
+import com.grex.vyay.ui.theme.CustomColors
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
@@ -49,7 +46,12 @@ fun SplashScreen(
     onLoadingComplete: () -> Unit
 ) {
     val context = LocalContext.current
-    val permissionState = rememberPermissionState(Manifest.permission.READ_SMS)
+    val permissionsState = rememberMultiplePermissionsState(
+        permissions = listOf(
+            Manifest.permission.RECEIVE_SMS,
+            Manifest.permission.READ_SMS
+        )
+    )
     val showRationale = remember { mutableStateOf(false) }
 
     val currentProgress by smsAnalysisService.progress.collectAsState()
@@ -57,11 +59,11 @@ fun SplashScreen(
     val systemUiController = rememberSystemUiController()
     DisposableEffect(systemUiController) {
         systemUiController.setStatusBarColor(
-            color = backgroundPrimaryTop,
+            color = CustomColors.backgroundPrimaryTop,
             darkIcons = false // Set to false for light icons
         )
         systemUiController.setNavigationBarColor(
-            color = backgroundPrimaryBottom,
+            color = CustomColors.backgroundPrimaryBottom,
             darkIcons = false // Set to false for light icons
         )
         onDispose {}
@@ -69,21 +71,22 @@ fun SplashScreen(
     var showSmsPermissionDialog by remember { mutableStateOf(false) }
 
     val smsPermissionText = "This application needs access to your SMS to generate " +
-            "expense reports. You data remains in your Phone."
+            "expense reports. Your data remains on your phone."
     val smsDeclinedPermissionText = "It seems you have declined SMS permission. This application needs access to your SMS to generate " +
             "expense reports. You can enable permission from App Settings."
 
     LaunchedEffect(Unit) {
-        if (!permissionState.status.isGranted) {
-            permissionState.launchPermissionRequest()
+        if (permissionsState.permissions.any { !it.status.isGranted }) {
+            permissionsState.launchMultiplePermissionRequest()
         }
     }
-    LaunchedEffect(permissionState.status.shouldShowRationale) {
-        showRationale.value = permissionState.status.shouldShowRationale
+
+    LaunchedEffect(permissionsState.permissions) {
+        showRationale.value = permissionsState.permissions.any { it.status.shouldShowRationale }
     }
-    LaunchedEffect(key1 = permissionState.status.isGranted) {
-        Log.d("INIT", "READ SMS Permission: $permissionState.status.isGranted")
-        if (permissionState.status.isGranted) {
+
+    LaunchedEffect(permissionsState.allPermissionsGranted) {
+        if (permissionsState.allPermissionsGranted) {
             showSmsPermissionDialog = false
             smsAnalysisService.startAnalysis()
             smsAnalysisService.progress.collect { progress ->
@@ -96,7 +99,7 @@ fun SplashScreen(
         }
     }
 
-//    Compose ---------
+    // Compose UI
 
     Box(
         modifier = Modifier
@@ -104,8 +107,8 @@ fun SplashScreen(
             .background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        backgroundPrimaryTop,
-                        backgroundPrimaryBottom
+                        CustomColors.backgroundPrimaryTop,
+                        CustomColors.backgroundPrimaryBottom
                     )
                 )
             )
@@ -129,21 +132,19 @@ fun SplashScreen(
                 LinearProgressIndicator(
                     progress = { currentProgress },
                     modifier = Modifier.fillMaxWidth(),
-                    color = primaryActive,
-                    trackColor = secondaryInactive,
+                    color = CustomColors.primary,
+                    trackColor = CustomColors.onSecondaryInactive,
                 )
             }
-
-
         }
-        if (!permissionState.status.isGranted) {
+        if (showSmsPermissionDialog) {
             PermissionCard(
                 permissionText = smsPermissionText,
                 declinedPermissionText = smsDeclinedPermissionText,
                 isPermanentlyDeclined = showRationale.value,
                 onOkClick = {
-                    if (permissionState.status.shouldShowRationale) {
-                        permissionState.launchPermissionRequest()
+                    if (permissionsState.permissions.any { it.status.shouldShowRationale }) {
+                        permissionsState.launchMultiplePermissionRequest()
                     } else {
                         // Open app settings
                         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
@@ -155,4 +156,8 @@ fun SplashScreen(
         }
     }
 }
-
+//
+//private fun notifyUi(context: Context) {
+//    val intent = Intent("SMS_PROCESSED")
+//    LocalBroadcastManager.getInstance(context).sendBroadcast(intent)
+//}

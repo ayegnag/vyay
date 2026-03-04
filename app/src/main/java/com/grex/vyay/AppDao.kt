@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.RewriteQueriesToDropUnusedColumns
 import androidx.room.Transaction
+import java.time.YearMonth
 
 @Dao
 interface AppDao {
@@ -14,6 +15,24 @@ interface AppDao {
 
     @Query("SELECT * FROM transaction_records")
     fun getAllRecords(): List<TransactionRecord>
+
+    @Query(
+        """
+        SELECT 
+            CAST(strftime('%Y', datetime(MIN(receivedOnDate) / 1000, 'unixepoch')) AS INTEGER) AS year,
+            CAST(strftime('%m', datetime(MIN(receivedOnDate) / 1000, 'unixepoch')) AS INTEGER) AS month
+        FROM 
+            transaction_records
+        WHERE 
+            receivedOnDate IS NOT NULL
+    """
+    )
+    suspend fun getFirstKnownYearMonthTuple(): YearMonthTuple?
+
+    suspend fun getFirstKnownYearMonth(): YearMonth? {
+        val tuple = getFirstKnownYearMonthTuple()
+        return tuple?.let { YearMonth.of(it.year, it.month) }
+    }
 
     @Transaction
     suspend fun insertMessageWithModifiedTransactionType(record: TransactionRecord) {
@@ -85,7 +104,10 @@ interface AppDao {
             messageDate = :messageDate,
             source = :source,
             isTransaction = :isTransaction,
-            body = :body
+            body = :body,
+            tags = :tags,
+            category = :category,
+            isProcessed = :isProcessed
         WHERE 
             id = :id
             AND isManual = :isManual
@@ -105,7 +127,10 @@ interface AppDao {
         messageDate: String?,
         source: String,
         isTransaction: Boolean,
-        body: String
+        body: String,
+        tags: String?,
+        category: String?,
+        isProcessed: Boolean?
     ): Int
 
     @Query(
@@ -134,7 +159,39 @@ interface AppDao {
             messageDate = transactionRecord.messageDate,
             source = transactionRecord.source,
             isTransaction = transactionRecord.isTransaction,
-            body = transactionRecord.body
+            body = transactionRecord.body,
+            tags = transactionRecord.tags,
+            category = transactionRecord.category,
+            isProcessed = transactionRecord.isProcessed
         )
     }
+
+    @RewriteQueriesToDropUnusedColumns
+    @Query(
+        """
+    SELECT 
+        SUM(amount) AS total_amount
+    FROM 
+        transaction_records
+    WHERE 
+        amount IS NOT NULL
+        AND transactionType IN ('expense')
+        AND isTransaction = 1
+        AND strftime('%Y-%m', datetime(receivedOnDate / 1000, 'unixepoch')) = strftime('%Y-%m', 'now')
+"""
+    )
+    suspend fun getCurrentMonthExpense(): Double
+
+    // Separate Public function in-case we need a different conflict strategy here
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertTransactionRecord(transactionRecord: TransactionRecord)
+
+    @Query("DELETE FROM transaction_records WHERE id = :id AND isManual = 1 ")
+    fun deleteManualRecord(id: Int)
+
 }
+
+data class YearMonthTuple(
+    val year: Int,
+    val month: Int
+)

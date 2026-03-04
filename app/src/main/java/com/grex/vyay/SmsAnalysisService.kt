@@ -1,8 +1,11 @@
 package com.grex.vyay
 
+import android.app.Service
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.IBinder
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.core.content.ContextCompat
@@ -18,7 +21,7 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 
-class SmsAnalysisService private constructor() {
+class SmsAnalysisService : Service() {
     private val applicationContext: Context = VyayApp.instance.applicationContext
     private val serviceScope = CoroutineScope(Dispatchers.Default)
     private lateinit var activity: ComponentActivity
@@ -84,79 +87,81 @@ class SmsAnalysisService private constructor() {
             // Get the latest SMS date from the database
             val latestSmsInDb = appDao.getLatestRecordDate()
 
-            applicationContext.contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
-                var processedCount = 0f
-                totalSmsCount = cursor.count
-                totalProgressSteps += totalSmsCount
-                Log.d("Cursor", totalSmsCount.toString())
+            applicationContext.contentResolver.query(uri, projection, null, null, null)
+                ?.use { cursor ->
+                    var processedCount = 0f
+                    totalSmsCount = cursor.count
+                    totalProgressSteps += totalSmsCount
+                    Log.d("Cursor", totalSmsCount.toString())
 
-                val idColumn = cursor.getColumnIndexOrThrow("_id")
-                val addressColumn = cursor.getColumnIndexOrThrow("address")
-                val bodyColumn = cursor.getColumnIndexOrThrow("body")
-                val dateColumn = cursor.getColumnIndexOrThrow("date")
+                    val idColumn = cursor.getColumnIndexOrThrow("_id")
+                    val addressColumn = cursor.getColumnIndexOrThrow("address")
+                    val bodyColumn = cursor.getColumnIndexOrThrow("body")
+                    val dateColumn = cursor.getColumnIndexOrThrow("date")
 
-                while (cursor.moveToNext()) {
-                    // Skip if SMS in unsupported
-                    val body = cursor.getString(bodyColumn)
-                    val details = parser.parse(body) ?: continue
+                    while (cursor.moveToNext()) {
+                        // Skip if SMS is unsupported
+                        val body = cursor.getString(bodyColumn)
+                        val details = parser.parse(body) ?: continue
 
 
-                    // If we've reached SMS older than or equal to the latest in the DB, stop processing
-                    val smsDate = cursor.getLong(dateColumn)
-                    if (latestSmsInDb != null && smsDate <= latestSmsInDb) {
-                        Log.d("preSMSData", smsDate.toString())
-                        break
-                    }
+                        // If we've reached SMS older than or equal to the latest in the DB, stop processing
+                        val smsDate = cursor.getLong(dateColumn)
+                        if (latestSmsInDb != null && smsDate <= latestSmsInDb) {
+                            Log.d("preSMSData", smsDate.toString())
+                            break
+                        }
 
 //                    processedCount++
-                    val currentIndex = cursor.position
-                    processedCount = (currentIndex + 1).toFloat() / cursor.count
-                    Log.d("Cursor", """${processedCount}""")
-                    progressCallback(processedCount)
+                        val currentIndex = cursor.position
+                        processedCount = (currentIndex + 1).toFloat() / cursor.count
+                        Log.d("Cursor", """${processedCount}""")
+                        progressCallback(processedCount)
 
-                    val address = cursor.getString(addressColumn)
-                    val supportedBankList = listOf("HDFCBK", "SBI")
-                    if (supportedBankList.any { address.contains(it, ignoreCase = true) }) {
+                        val address = cursor.getString(addressColumn)
+                        val supportedBankList = getBankList()
+                        if (supportedBankList.any { address.contains(it, ignoreCase = true) }) {
 
-                        val id = cursor.getInt(idColumn)
-                        val transactionRecord = TransactionRecord(
-                            id = id,
-                            isManual = false,
-                            address = address,
-                            receivedOnDate = smsDate,
-                            transactionType = details?.transactionType,
-                            currency = details?.currency,
-                            amount = details?.amount,
-                            receivedAt = details?.receiver,
-                            transactionMode = details?.transactionMode,
-                            messageDate = details?.date,
-                            source = "sms",
-                            isTransaction = true,
-                            body = body,
-                            category = "",
-                            tags = ""
-                        )
+                            val id = cursor.getInt(idColumn)
+                            val transactionRecord = TransactionRecord(
+                                id = id,
+                                isManual = false,
+                                address = address,
+                                receivedOnDate = smsDate,
+                                transactionType = details.transactionType ?: "",
+                                currency = details.currency,
+                                amount = details.amount,
+                                receivedAt = details.receiver,
+                                transactionMode = details.transactionMode,
+                                messageDate = details.date,
+                                source = "sms",
+                                isTransaction = true,
+                                body = body,
+                                category = "",
+                                tags = "",
+                                isProcessed = false
+                            )
 
-                        val dateTime = epochToDateTime(smsDate)
-                        print(details)
+                            val dateTime = epochToDateTime(smsDate)
+                            print(details)
 //                        Log.d(
 //                            "SMSData",
 //                            "$id $address $dateTime ${details.transactionType} ${details.currency} ${details.amount} ${details.date} ${details.bank} ${details.transactionMode}"
 //                        )
 
-                        appDao.insertMessageWithModifiedTransactionType(transactionRecord)
+                            appDao.insertMessageWithModifiedTransactionType(transactionRecord)
 //                        delay(10)
+                        }
                     }
+                    // SMS records created in DB, next to generate reports
+                    generateMonthlyExpenses() {
+                        processedCount++
+                    }
+                    generateMonthlyIncomes() {
+                        processedCount++
+                    }
+                    progressCallback(processedCount)
                 }
-                // SMS records created in DB, next to generate reports
-                generateMonthlyExpenses() {
-                    processedCount++
-                }
-                generateMonthlyIncomes() {
-                    processedCount++
-                }
-                progressCallback(processedCount)
-            }
         }
     }
 
@@ -165,9 +170,11 @@ class SmsAnalysisService private constructor() {
             appDao.getAllRecords().size
         }
     }
+
     fun getTotalSmsCount(): Int {
         return totalSmsCount
     }
+
     fun readAllSms(): Int {
         var smsCount = 0
         val uri = Uri.parse("content://sms/inbox")
@@ -189,6 +196,7 @@ class SmsAnalysisService private constructor() {
         }
         expenseData = mutableExpenseData
     }
+
     private suspend fun generateMonthlyIncomes(progressIncrement: () -> Unit) {
         val mutableIncomeData = mutableListOf<MonthlyTotal>()
         val totalMonthlyTotal = appDao.getMonthlyIncomes()
@@ -202,14 +210,24 @@ class SmsAnalysisService private constructor() {
     fun getMonthlyExpense(): List<MonthlyTotal> {
         return expenseData
     }
+
     fun getMonthlyIncome(): List<MonthlyTotal> {
         return incomeData
     }
+    suspend fun getMonthlyExpenseFromDB(): List<MonthlyTotal> {
+        return appDao.getMonthlyExpenses()
+    }
+
+    suspend fun getMonthlyIncomeFromDB(): List<MonthlyTotal> {
+        return appDao.getMonthlyIncomes()
+    }
+
     suspend fun fetchMonthlyExpense(): List<MonthlyTotal> {
         val totalMonthlyTotal = appDao.getMonthlyExpenses()
         expenseData = totalMonthlyTotal
         return expenseData
     }
+
     suspend fun fetchMonthlyIncome(): List<MonthlyTotal> {
         val totalMonthlyTotal = appDao.getMonthlyIncomes()
         incomeData = totalMonthlyTotal
@@ -219,10 +237,44 @@ class SmsAnalysisService private constructor() {
     fun resetSmsData() {
         appDao.deleteAllRecords() // Clear existing messages
     }
+
+    // You need to implement these methods for a Service
+    override fun onBind(intent: Intent?): IBinder? {
+        return null // Return null if you don't want to allow binding
+    }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Handle the start command
+        return START_NOT_STICKY // or another appropriate return value
+    }
 }
 
 fun epochToDateTime(epochMillis: Long): String {
     val instant = Instant.ofEpochMilli(epochMillis)
     val zonedDateTime = instant.atZone(ZoneId.systemDefault())
     return zonedDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+}
+
+fun getBankList(): List<String> {
+    return listOf(
+        "HDFCBK",
+        "AxisBk",
+        "CITIBA",
+        "SBIUPI",
+        "ICICIB",
+        "PNBBNK",
+        "YESBNK",
+        "KOTAKB",
+        "IDFCBK",
+        "INDUSB",
+        "UNIONB",
+        "CANBNK",
+        "BOIINB",
+        "IDBIBN",
+        "BOMBNK",
+        "FEDBNK",
+        "BANDHN",
+        "RBLBNK",
+        "DBSBNK"
+    )
 }
