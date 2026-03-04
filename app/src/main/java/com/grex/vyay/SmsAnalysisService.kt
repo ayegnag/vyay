@@ -9,6 +9,8 @@ import android.os.IBinder
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
+import com.grex.vyay.ml.SmsNerInterpreter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -30,7 +32,8 @@ class SmsAnalysisService : Service() {
     private var totalSmsCount = 0
     private var totalProgressSteps = 1
     private val _progress = MutableStateFlow(0f)
-    private val parser = SmsParser()
+//    private val parser = SmsParser()
+    private val parser = HybridSmsParser(SmsNerInterpreter(applicationContext))
     lateinit var expenseData: List<MonthlyTotal>
     lateinit var incomeData: List<MonthlyTotal>
 
@@ -80,7 +83,7 @@ class SmsAnalysisService : Service() {
     }
 
     private suspend fun readAndStoreSms(progressCallback: suspend (Float) -> Unit) {
-        val uri = Uri.parse("content://sms/inbox")
+        val uri = "content://sms/inbox".toUri()
         val projection = arrayOf("_id", "address", "body", "date")
 
         withContext(Dispatchers.IO) {
@@ -102,6 +105,8 @@ class SmsAnalysisService : Service() {
                     while (cursor.moveToNext()) {
                         // Skip if SMS is unsupported
                         val body = cursor.getString(bodyColumn)
+
+                        // Run through SMS Parser!
                         val details = parser.parse(body) ?: continue
 
 

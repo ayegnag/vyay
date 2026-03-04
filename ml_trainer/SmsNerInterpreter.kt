@@ -36,7 +36,7 @@ class SmsNerInterpreter(context: Context) {
 
     companion object {
         private const val TAG          = "SmsNerInterpreter"
-        private const val MODEL_PATH   = "sms_ner/sms_ner_model.tflite"
+        private const val MODEL_PATH   = "sms_ner/sms_ner_tiny.tflite"
         private const val VOCAB_PATH   = "sms_ner/vocab.txt"
         private const val MAX_SEQ_LEN  = 128  // bert-tiny: ~17MB float32, ~8ms inference
         private const val CLS_TOKEN_ID = 101   // [CLS]

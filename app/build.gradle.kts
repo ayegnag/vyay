@@ -41,6 +41,7 @@ android {
     }
     buildFeatures {
         compose = true
+        mlModelBinding = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.8"
@@ -73,9 +74,15 @@ android {
             force("androidx.activity:activity:1.8.2")
         }
     }
+
+    @Suppress("UnstableApiUsage")
+    androidResources {
+        noCompress += "tflite"
+    }
 }
 
 dependencies {
+    implementation("org.tensorflow:tensorflow-lite-metadata:0.2.0")
     val lifecycleVersion = "2.8.5"
     implementation(platform("androidx.compose:compose-bom:2024.02.00"))
 
@@ -109,6 +116,11 @@ dependencies {
     implementation("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
     implementation("com.google.accompanist:accompanist-permissions:0.31.1-alpha")
     implementation("com.google.accompanist:accompanist-flowlayout:0.30.1")
+
+    implementation("javax.inject:javax.inject:1")
+    // Tensorflow Lite dependencies
+    implementation("org.tensorflow:tensorflow-lite:2.17.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.5.0")
 
     // Room dependencies
     implementation("androidx.room:room-runtime:2.6.1")
