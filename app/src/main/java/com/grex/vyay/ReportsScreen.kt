@@ -1,5 +1,6 @@
 package com.grex.vyay
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -60,8 +61,10 @@ fun ReportsScreen(
 
     suspend fun fetchData() {
         isLoading = true
-        expenseData = smsAnalysisService.fetchMonthlyExpense()
-        incomeData = smsAnalysisService.fetchMonthlyIncome()
+//        expenseData = smsAnalysisService.fetchMonthlyExpense()
+//        incomeData = smsAnalysisService.fetchMonthlyIncome()
+        expenseData = smsAnalysisService.getMonthlyExpenseFromDB()
+        incomeData = smsAnalysisService.getMonthlyIncomeFromDB()
         isLoading = false
         onAckUpdate(false)
     }
@@ -69,10 +72,14 @@ fun ReportsScreen(
         if (isTransactionRecordUpdated) {
             fetchData()
         } else {
-            expenseData = smsAnalysisService.getMonthlyExpense()
-            incomeData = smsAnalysisService.getMonthlyIncome()
+//            expenseData = smsAnalysisService.getMonthlyExpense()
+//            incomeData = smsAnalysisService.getMonthlyIncome()
+            expenseData = smsAnalysisService.getMonthlyExpenseFromDB()
+            incomeData = smsAnalysisService.getMonthlyIncomeFromDB()
             isLoading = false
         }
+        Log.d("ChartExpData", expenseData.toString())
+        Log.d("ChartExpData", incomeData.toString())
     }
     DisposableEffect(systemUiController) {
         systemUiController.setStatusBarColor(
@@ -205,18 +212,9 @@ fun ReportsScreen(
 @Preview
 @Composable
 fun ReportsScreen() {
-    val expenseData = listOf(
-        MonthlyTotal(month = "2024-05", totalAmount = 44990f),
-        MonthlyTotal(month = "2024-06", totalAmount = 104692.5f),
-        MonthlyTotal(month = "2024-07", totalAmount = 98317.5f),
-        MonthlyTotal(month = "2024-08", totalAmount = 81517.2f)
-    )
-    val incomeData = listOf(
-        MonthlyTotal(month = "2024-05", totalAmount = 174404.0f),
-        MonthlyTotal(month = "2024-06", totalAmount = 146982.5f),
-        MonthlyTotal(month = "2024-07", totalAmount = 152831.5f),
-        MonthlyTotal(month = "2024-08", totalAmount = 166151.2f)
-    )
+    val expenseData = listOf(MonthlyTotal(month="2021-10", totalAmount=61574.0f), MonthlyTotal(month="2021-11", totalAmount=49799.0f), MonthlyTotal(month="2021-12", totalAmount=39164.0f), MonthlyTotal(month="2022-01", totalAmount=118034.1f), MonthlyTotal(month="2022-02", totalAmount=84124.0f), MonthlyTotal(month="2022-03", totalAmount=141169.67f), MonthlyTotal(month="2022-04", totalAmount=126766.0f), MonthlyTotal(month="2022-05", totalAmount=75449.0f), MonthlyTotal(month="2022-06", totalAmount=40031.0f), MonthlyTotal(month="2022-07", totalAmount=258348.0f), MonthlyTotal(month="2022-08", totalAmount=161658.0f), MonthlyTotal(month="2022-09", totalAmount=450509.7f), MonthlyTotal(month="2022-10", totalAmount=36872.5f), MonthlyTotal(month="2022-11", totalAmount=53221.0f), MonthlyTotal(month="2022-12", totalAmount=321245.0f), MonthlyTotal(month="2023-01", totalAmount=53050.0f), MonthlyTotal(month="2023-02", totalAmount=256632.16f), MonthlyTotal(month="2023-03", totalAmount=91588.0f), MonthlyTotal(month="2023-04", totalAmount=124451.0f), MonthlyTotal(month="2023-05", totalAmount=159494.0f), MonthlyTotal(month="2023-06", totalAmount=59544.32f), MonthlyTotal(month="2023-07", totalAmount=194619.77f), MonthlyTotal(month="2023-08", totalAmount=153272.81f), MonthlyTotal(month="2023-09", totalAmount=236400.77f), MonthlyTotal(month="2023-10", totalAmount=60685.82f), MonthlyTotal(month="2023-11", totalAmount=176938.78f), MonthlyTotal(month="2023-12", totalAmount=61094.1f), MonthlyTotal(month="2024-01", totalAmount=193477.84f), MonthlyTotal(month="2024-02", totalAmount=426907.62f), MonthlyTotal(month="2024-03", totalAmount=54620.22f), MonthlyTotal(month="2024-04", totalAmount=75525.0f), MonthlyTotal(month="2024-05", totalAmount=198477.05f), MonthlyTotal(month="2024-06", totalAmount=254622.1f), MonthlyTotal(month="2024-07", totalAmount=39429.0f), MonthlyTotal(month="2024-09", totalAmount=6727.0f))
+    val incomeData = listOf(MonthlyTotal(month="2021-10", totalAmount=115262.0f), MonthlyTotal(month="2021-12", totalAmount=102499.0f), MonthlyTotal(month="2022-01", totalAmount=102792.0f), MonthlyTotal(month="2022-02", totalAmount=107812.0f), MonthlyTotal(month="2022-03", totalAmount=121300.0f), MonthlyTotal(month="2022-04", totalAmount=229603.0f), MonthlyTotal(month="2022-05", totalAmount=28213.0f), MonthlyTotal(month="2022-06", totalAmount=132286.0f), MonthlyTotal(month="2022-07", totalAmount=330331.0f), MonthlyTotal(month="2022-08", totalAmount=594790.0f), MonthlyTotal(month="2022-09", totalAmount=28322.25f), MonthlyTotal(month="2022-10", totalAmount=149682.0f), MonthlyTotal(month="2022-11", totalAmount=145543.0f), MonthlyTotal(month="2022-12", totalAmount=254190.0f), MonthlyTotal(month="2023-01", totalAmount=8.82f), MonthlyTotal(month="2023-02", totalAmount=133710.0f), MonthlyTotal(month="2023-03", totalAmount=103061.0f), MonthlyTotal(month="2023-04", totalAmount=227539.0f), MonthlyTotal(month="2023-05", totalAmount=180.0f), MonthlyTotal(month="2023-06", totalAmount=128988.0f), MonthlyTotal(month="2023-07", totalAmount=144757.5f), MonthlyTotal(month="2023-08", totalAmount=149988.0f), MonthlyTotal(month="2023-09", totalAmount=605242.0f), MonthlyTotal(month="2023-11", totalAmount=302052.0f), MonthlyTotal(month="2023-12", totalAmount=153190.0f), MonthlyTotal(month="2024-02", totalAmount=153211.0f), MonthlyTotal(month="2024-03", totalAmount=306420.0f), MonthlyTotal(month="2024-05", totalAmount=153210.0f), MonthlyTotal(month="2024-06", totalAmount=156570.0f), MonthlyTotal(month="2024-07", totalAmount=155610.0f), MonthlyTotal(month="2024-08", totalAmount=615513.0f), MonthlyTotal(month="2024-09", totalAmount=240005.0f))
+
     Column(
         modifier = Modifier
             .fillMaxSize()

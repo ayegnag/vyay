@@ -77,6 +77,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.text.NumberFormat
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -493,6 +494,14 @@ class FakeAppDao : AppDao {
     }
 
     override fun getAllRecords(): List<TransactionRecord> {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getFirstKnownYearMonthTuple(): YearMonthTuple? {
+        TODO("Not yet implemented")
+    }
+
+    override suspend fun getFirstKnownYearMonth(): YearMonth? {
         TODO("Not yet implemented")
     }
 

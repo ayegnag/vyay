@@ -61,13 +61,18 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.navigation.NavHostController
 import com.google.accompanist.systemuicontroller.rememberSystemUiController
 import com.grex.vyay.ui.components.CustomScrollbar
+import com.grex.vyay.ui.components.MonthYearSelector
 import com.grex.vyay.ui.components.SearchBar
 import com.grex.vyay.ui.components.SortBar
 import com.grex.vyay.ui.components.SortType
 import com.grex.vyay.ui.theme.CustomColors
 import com.grex.vyay.ui.theme.VyayTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.time.LocalDate
+import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Date
 import java.util.Locale
@@ -93,6 +98,14 @@ fun StatementsScreen(
     var showToolBar by remember { mutableStateOf(true) }
     var toggleSearch by remember { mutableStateOf(false) }
     var toggleSort by remember { mutableStateOf(false) }
+    val initialDate = YearMonth.now()
+    var lastSupportedDate: YearMonth by remember { mutableStateOf(YearMonth.now()) }
+
+    suspend fun setMonthsTransactionData(month: String) {
+        transactionData = appDao.getTransactionsForMonth(month)
+        displayMonth = month.let { utils.convertYearMonthToMonthName(it) }.toString()
+        filteredTransactions = transactionData
+    }
 
     LaunchedEffect(yearMonth) {
         val month = if (yearMonth == "{yearMonth}" || yearMonth == null) {
@@ -101,12 +114,17 @@ fun StatementsScreen(
             yearMonth
         }
         Log.d("Transaction Month", month)
-        transactionData = appDao.getTransactionsForMonth(month)
-        filteredTransactions = transactionData
+        setMonthsTransactionData(month)
+        val firstYearMonth = appDao.getFirstKnownYearMonth()
+        lastSupportedDate = if (firstYearMonth != null) {
+            Log.d("FirstYear", firstYearMonth.toString())
+            YearMonth.of(firstYearMonth.year, firstYearMonth.month)
+        } else {
+            YearMonth.now()
+        }
 //        transactionData.forEach { transaction ->
 //            Log.d("Transactions", transaction.toString())
 //        }
-        displayMonth = month?.let { utils.convertYearMonthToMonthName(it) }.toString()
     }
     val listState = rememberLazyListState()
     val selectedTransactionId = remember { mutableStateOf<Int?>(null) }
@@ -120,6 +138,8 @@ fun StatementsScreen(
     }
 
     val systemUiController = rememberSystemUiController()
+
+
     DisposableEffect(systemUiController) {
         systemUiController.setStatusBarColor(
             color = CustomColors.backgroundPrimaryTop,
@@ -191,6 +211,27 @@ fun StatementsScreen(
                                     tint = CustomColors.active
                                 )
                             }
+                            MonthYearSelector(
+                                initialDate = initialDate,
+                                lastSupportedDate = lastSupportedDate,
+                                onDateSelected = { selectedDate ->
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        println(
+                                            "Selected date: ${
+                                                selectedDate.format(
+                                                    DateTimeFormatter.ofPattern("yyyy-MM")
+                                                )
+                                            }"
+                                        )
+                                        // Handle the selected date
+                                        setMonthsTransactionData(
+                                            selectedDate.format(
+                                                DateTimeFormatter.ofPattern("yyyy-MM")
+                                            )
+                                        )
+                                    }
+                                }
+                            )
                         }
                     }
                     if (toggleSearch) {
@@ -617,6 +658,7 @@ fun StatementPagePreview() {
         }
     }
 }
+
 class FakeMainActivity : MainActivity() {
     // Override any necessary methods or properties here
 }
@@ -638,7 +680,7 @@ fun StatementsScreenWithMockContext(
             activity = activity,
             padding = padding,
             onTransactionClick = onTransactionClick,
-            savedStateHandle = savedStateHandle?: SavedStateHandle()
+            savedStateHandle = savedStateHandle ?: SavedStateHandle()
         )
     }
 }

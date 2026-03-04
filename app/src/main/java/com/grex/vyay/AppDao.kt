@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.RewriteQueriesToDropUnusedColumns
 import androidx.room.Transaction
+import java.time.YearMonth
 
 @Dao
 interface AppDao {
@@ -14,6 +15,24 @@ interface AppDao {
 
     @Query("SELECT * FROM transaction_records")
     fun getAllRecords(): List<TransactionRecord>
+
+    @Query(
+        """
+        SELECT 
+            CAST(strftime('%Y', datetime(MIN(receivedOnDate) / 1000, 'unixepoch')) AS INTEGER) AS year,
+            CAST(strftime('%m', datetime(MIN(receivedOnDate) / 1000, 'unixepoch')) AS INTEGER) AS month
+        FROM 
+            transaction_records
+        WHERE 
+            receivedOnDate IS NOT NULL
+    """
+    )
+    suspend fun getFirstKnownYearMonthTuple(): YearMonthTuple?
+
+    suspend fun getFirstKnownYearMonth(): YearMonth? {
+        val tuple = getFirstKnownYearMonthTuple()
+        return tuple?.let { YearMonth.of(it.year, it.month) }
+    }
 
     @Transaction
     suspend fun insertMessageWithModifiedTransactionType(record: TransactionRecord) {
@@ -171,3 +190,8 @@ interface AppDao {
     fun deleteManualRecord(id: Int)
 
 }
+
+data class YearMonthTuple(
+    val year: Int,
+    val month: Int
+)
