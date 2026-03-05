@@ -9,7 +9,6 @@ plugins {
 android {
     namespace = "com.grex.vyay"
     compileSdk = 34
-
     defaultConfig {
         applicationId = "com.grex.vyay"
         minSdk = 28
@@ -18,9 +17,15 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        ndk {
+            abiFilters += listOf("armeabi-v7a", "arm64-v8a", "x86_64")
+        }
+
         vectorDrawables {
             useSupportLibrary = true
         }
+
     }
 
     buildTypes {
@@ -119,8 +124,12 @@ dependencies {
 
     implementation("javax.inject:javax.inject:1")
     // Tensorflow Lite dependencies
-    implementation("org.tensorflow:tensorflow-lite:2.17.0")
-    implementation("org.tensorflow:tensorflow-lite-support:0.5.0")
+//    implementation("org.tensorflow:tensorflow-lite:2.17.0")
+//    implementation("org.tensorflow:tensorflow-lite-support:0.5.0")
+
+    // LiteRT = TFLite rebranded by Google, with 16KB page alignment fixed
+    implementation("com.google.ai.edge.litert:litert:1.2.0")
+    implementation("com.google.ai.edge.litert:litert-support:1.2.0")
 
     // Room dependencies
     implementation("androidx.room:room-runtime:2.6.1")

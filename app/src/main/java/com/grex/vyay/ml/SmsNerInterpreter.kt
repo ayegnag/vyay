@@ -38,7 +38,7 @@ class SmsNerInterpreter(context: Context) {
         private const val TAG          = "SmsNerInterpreter"
         private const val MODEL_PATH   = "sms_ner/sms_ner_tiny.tflite"
         private const val VOCAB_PATH   = "sms_ner/vocab.txt"
-        private const val MAX_SEQ_LEN  = 128  // bert-tiny: ~17MB float32, ~8ms inference
+        private const val MAX_SEQ_LEN  = 128  // matches [1,128] shape confirmed via get_input_details()
         private const val CLS_TOKEN_ID = 101   // [CLS]
         private const val SEP_TOKEN_ID = 102   // [SEP]
         private const val UNK_TOKEN_ID = 100   // [UNK]
@@ -206,9 +206,11 @@ class SmsNerInterpreter(context: Context) {
     ): Array<Array<FloatArray>> {
         // TF Lite expects: [batch=1, seq_len] as int32 tensors
         fun intArrayToBuffer(arr: IntArray): ByteBuffer {
-            val buf = ByteBuffer.allocateDirect(arr.size * 4)
+            // litert_torch exports input tensors as INT64 (8 bytes per element).
+            // allocate 8 bytes per token and write each int as a Long.
+            val buf = ByteBuffer.allocateDirect(arr.size * 8)
             buf.order(ByteOrder.nativeOrder())
-            arr.forEach { buf.putInt(it) }
+            arr.forEach { buf.putLong(it.toLong()) }
             buf.rewind()
             return buf
         }
