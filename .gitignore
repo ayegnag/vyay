@@ -44,3 +44,11 @@ google-services.json
 *.hprof
 
 .DS_Store
+
+# venv
+.venv/
+venv/
+
+# ML Output
+model_output/
+model_output_tiny/

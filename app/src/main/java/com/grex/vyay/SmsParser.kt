@@ -34,6 +34,25 @@ class SmsParser {
     private val transactionIdPattern = Pattern.compile("(Ref|Refno|TXN ID|RefNo|Transaction ID)\\s*(\\w+)")
 
     fun parse(sms: String): TransactionDetails? {
+        // ── Block non-transaction SMS types ───────────────────────────────────
+        // These keywords indicate the SMS is informational/security-related,
+        // not a transaction. Check before any other processing.
+        val lower = sms.lowercase()
+        val blocked = listOf(
+            "otp", "one time password", "one-time password",
+            "verification code", "verify", "is your",          // "123456 is your OTP"
+            "do not share", "never share",                     // OTP warning phrases
+            "login attempt", "sign in attempt", "signin",
+            "password reset", "reset your password",
+            "security code", "secure code",
+            "transaction password", "transfer limit",                           // some banks call OTP this
+            "tpin",                                            // transaction PIN alerts
+        )
+        if (blocked.any { lower.contains(it) }) {
+            Log.d("ParserInside", "Skipping non-transaction SMS")
+            return null
+        }
+
         // Extract account number first to ensure it's not mistaken as an amount
         val accountNumber = findMatch(accountNumberPattern, sms)
         var sanitizedSms = sms
