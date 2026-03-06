@@ -34,25 +34,157 @@ import java.time.format.DateTimeFormatter
 import java.time.format.TextStyle
 import java.util.Locale
 
+//@Composable
+//fun MonthYearSelector(
+//    initialDate: YearMonth,
+//    lastSupportedDate: YearMonth,
+//    onDateSelected: (YearMonth) -> Unit
+//) {
+//    var selectedDate by remember { mutableStateOf(initialDate) }
+//    var showDialog by remember { mutableStateOf(false) }
+//
+//    val formatter = DateTimeFormatter.ofPattern("MMMM yyyy")
+//    val currentYearMonth = YearMonth.now()
+//
+//    TextButton(
+//        onClick = { showDialog = true },
+//        colors = ButtonDefaults.textButtonColors(
+//            contentColor = CustomColors.active, // Color when enabled
+//            disabledContentColor = CustomColors.secondaryInactive   // Custom color when disabled
+//        )
+//    ) {
+//        Text("${selectedDate.format(formatter)} ▼")
+//    }
+//
+//    if (showDialog) {
+//        Dialog(onDismissRequest = { showDialog = false }) {
+//            Card(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .padding(16.dp),
+//                colors = CardDefaults.cardColors(CustomColors.surface)
+//            ) {
+//                Column(modifier = Modifier.padding(16.dp)) {
+//                    Text(
+//                        text = selectedDate.format(formatter),
+//                        style = MaterialTheme.typography.headlineSmall,
+//                        modifier = Modifier.fillMaxWidth(),
+//                        textAlign = TextAlign.Center
+//                    )
+//
+//                    Spacer(modifier = Modifier.height(16.dp))
+//
+//                    Row(
+//                        modifier = Modifier.fillMaxWidth(),
+//                        horizontalArrangement = Arrangement.SpaceBetween
+//                    ) {
+//                        IconButton(
+//                            onClick = {
+//                                if (selectedDate.year > lastSupportedDate.year) {
+//                                    selectedDate = selectedDate.minusYears(1)
+//                                }
+//                            },
+//                            enabled = selectedDate.year > lastSupportedDate.year
+//                        ) {
+//                            Text(
+//                                text = "◀",
+//                                color = if (selectedDate.year > lastSupportedDate.year)
+//                                    CustomColors.primary
+//                                else
+//                                    CustomColors.onPrimaryInactive
+//                            )
+//                        }
+//                        Text(
+//                            text = selectedDate.year.toString(),
+//                            style = MaterialTheme.typography.titleMedium
+//                        )
+//                        IconButton(
+//                            onClick = {
+//                                if (selectedDate.year < currentYearMonth.year) {
+//                                    selectedDate = selectedDate.plusYears(1)
+//                                }
+//                            },
+//                            enabled = selectedDate.year < currentYearMonth.year
+//                        ) {
+//                            Text(
+//                                text = "▶", color = if (selectedDate.year < currentYearMonth.year)
+//                                    CustomColors.primary
+//                                else
+//                                    CustomColors.onPrimaryInactive
+//                            )
+//                        }
+//                    }
+//
+//                    Spacer(modifier = Modifier.height(16.dp))
+//
+//                    LazyVerticalGrid(
+//                        columns = GridCells.Fixed(3),
+//                        verticalArrangement = Arrangement.spacedBy(8.dp),
+//                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+//                    ) {
+//                        items(
+//                            count = 12,
+//                            key = { it },
+//                            itemContent = { index ->
+//                                val month = YearMonth.of(selectedDate.year, index + 1)
+//                                val isEnabled = month.isAfter(lastSupportedDate.minusMonths(1)) &&
+//                                        !month.isAfter(currentYearMonth)
+//                                Box(
+//                                    modifier = Modifier
+//                                        .fillMaxWidth()
+//                                        .clickable(enabled = isEnabled) {
+//                                            selectedDate = month
+//                                            onDateSelected(selectedDate)
+//                                            showDialog = false
+//                                        }
+//                                        .padding(8.dp),
+//                                    contentAlignment = Alignment.Center
+//                                ) {
+//                                    Text(
+//                                        text = month.month.getDisplayName(
+//                                            TextStyle.SHORT,
+//                                            Locale.getDefault()
+//                                        ),
+//                                        color = if (isEnabled) CustomColors.active
+//                                        else CustomColors.onSecondaryInactive
+//                                    )
+//                                }
+//                            }
+//                        )
+//                    }
+//                }
+//            }
+//        }
+//    }
+//}
+
 @Composable
 fun MonthYearSelector(
-    initialDate: YearMonth,
+    selectedDate: YearMonth, // Changed from initialDate to reflect current state
     lastSupportedDate: YearMonth,
     onDateSelected: (YearMonth) -> Unit
 ) {
-    var selectedDate by remember { mutableStateOf(initialDate) }
+    // We only need internal state for the Dialog's temporary browsing,
+    // or we can use the passed selectedDate directly.
+    // To allow the user to flip through years in the dialog WITHOUT
+    // updating the parent until they click a month, we use a local "browsing" state.
+    var browsingDate by remember(selectedDate) { mutableStateOf(selectedDate) }
     var showDialog by remember { mutableStateOf(false) }
 
     val formatter = DateTimeFormatter.ofPattern("MMMM yyyy")
     val currentYearMonth = YearMonth.now()
 
     TextButton(
-        onClick = { showDialog = true },
+        onClick = {
+            browsingDate = selectedDate // Reset browsing to actual selection when opening
+            showDialog = true
+        },
         colors = ButtonDefaults.textButtonColors(
-            contentColor = CustomColors.active, // Color when enabled
-            disabledContentColor = CustomColors.secondaryInactive   // Custom color when disabled
+            contentColor = CustomColors.active,
+            disabledContentColor = CustomColors.secondaryInactive
         )
     ) {
+        // This now correctly reflects the date passed from the parent (e.g. from the Router)
         Text("${selectedDate.format(formatter)} ▼")
     }
 
@@ -66,7 +198,7 @@ fun MonthYearSelector(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = selectedDate.format(formatter),
+                        text = browsingDate.format(formatter),
                         style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.fillMaxWidth(),
                         textAlign = TextAlign.Center
@@ -80,34 +212,35 @@ fun MonthYearSelector(
                     ) {
                         IconButton(
                             onClick = {
-                                if (selectedDate.year > lastSupportedDate.year) {
-                                    selectedDate = selectedDate.minusYears(1)
+                                if (browsingDate.year > lastSupportedDate.year) {
+                                    browsingDate = browsingDate.minusYears(1)
                                 }
                             },
-                            enabled = selectedDate.year > lastSupportedDate.year
+                            enabled = browsingDate.year > lastSupportedDate.year
                         ) {
                             Text(
                                 text = "◀",
-                                color = if (selectedDate.year > lastSupportedDate.year)
+                                color = if (browsingDate.year > lastSupportedDate.year)
                                     CustomColors.primary
                                 else
                                     CustomColors.onPrimaryInactive
                             )
                         }
                         Text(
-                            text = selectedDate.year.toString(),
+                            text = browsingDate.year.toString(),
                             style = MaterialTheme.typography.titleMedium
                         )
                         IconButton(
                             onClick = {
-                                if (selectedDate.year < currentYearMonth.year) {
-                                    selectedDate = selectedDate.plusYears(1)
+                                if (browsingDate.year < currentYearMonth.year) {
+                                    browsingDate = browsingDate.plusYears(1)
                                 }
                             },
-                            enabled = selectedDate.year < currentYearMonth.year
+                            enabled = browsingDate.year < currentYearMonth.year
                         ) {
                             Text(
-                                text = "▶", color = if (selectedDate.year < currentYearMonth.year)
+                                text = "▶",
+                                color = if (browsingDate.year < currentYearMonth.year)
                                     CustomColors.primary
                                 else
                                     CustomColors.onPrimaryInactive
@@ -126,15 +259,15 @@ fun MonthYearSelector(
                             count = 12,
                             key = { it },
                             itemContent = { index ->
-                                val month = YearMonth.of(selectedDate.year, index + 1)
+                                val month = YearMonth.of(browsingDate.year, index + 1)
                                 val isEnabled = month.isAfter(lastSupportedDate.minusMonths(1)) &&
                                         !month.isAfter(currentYearMonth)
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable(enabled = isEnabled) {
-                                            selectedDate = month
-                                            onDateSelected(selectedDate)
+                                            // NOTIFY THE PARENT
+                                            onDateSelected(month)
                                             showDialog = false
                                         }
                                         .padding(8.dp),
@@ -142,10 +275,12 @@ fun MonthYearSelector(
                                 ) {
                                     Text(
                                         text = month.month.getDisplayName(
-                                            TextStyle.SHORT,
-                                            Locale.getDefault()
+                                            TextStyle.SHORT, // From java.time.format.TextStyle
+                                            Locale.getDefault() // From java.util.Locale
                                         ),
-                                        color = if (isEnabled) CustomColors.active
+                                        // Highlight the currently selected month
+                                        color = if (month == selectedDate) CustomColors.primary
+                                        else if (isEnabled) CustomColors.active
                                         else CustomColors.onSecondaryInactive
                                     )
                                 }

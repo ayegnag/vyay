@@ -47,6 +47,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,8 +68,6 @@ import com.grex.vyay.ui.components.SortBar
 import com.grex.vyay.ui.components.SortType
 import com.grex.vyay.ui.theme.CustomColors
 import com.grex.vyay.ui.theme.VyayTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.time.LocalDate
@@ -87,6 +86,7 @@ fun StatementsScreen(
     onTransactionClick: (TransactionRecord) -> Unit,
     savedStateHandle: SavedStateHandle
 ) {
+    val scope = rememberCoroutineScope()
     val applicationContext: Context = LocalContext.current.applicationContext
     val database: AppDatabase = AppDatabase.getDatabase(applicationContext)
     val utils = Utilities()
@@ -94,16 +94,21 @@ fun StatementsScreen(
     var transactionData by remember { mutableStateOf<List<TransactionRecord>>(emptyList()) }
     var filteredTransactions by remember { mutableStateOf(transactionData) }
     var displayMonth by remember { mutableStateOf<String>("") }
+    var displayYear by remember { mutableStateOf<String>("") }
 
     var showToolBar by remember { mutableStateOf(true) }
     var toggleSearch by remember { mutableStateOf(false) }
     var toggleSort by remember { mutableStateOf(false) }
-    val initialDate = YearMonth.now()
+//    val initialDate = YearMonth.now()
+    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     var lastSupportedDate: YearMonth by remember { mutableStateOf(YearMonth.now()) }
 
     suspend fun setMonthsTransactionData(month: String) {
+        Log.d("setMonthsTransactionData: ", month)
         transactionData = appDao.getTransactionsForMonth(month)
-        displayMonth = month.let { utils.convertYearMonthToMonthName(it) }.toString()
+        val (monthName, year) = utils.convertYearMonthToDisplayStrings(month)
+        displayMonth = monthName
+        displayYear = year
         filteredTransactions = transactionData
     }
 
@@ -113,8 +118,9 @@ fun StatementsScreen(
         } else {
             yearMonth
         }
+        currentMonth = YearMonth.parse(yearMonth)
         Log.d("Transaction Month", month)
-        setMonthsTransactionData(month)
+//        setMonthsTransactionData(month)
         val firstYearMonth = appDao.getFirstKnownYearMonth()
         lastSupportedDate = if (firstYearMonth != null) {
             Log.d("FirstYear", firstYearMonth.toString())
@@ -122,6 +128,7 @@ fun StatementsScreen(
         } else {
             YearMonth.now()
         }
+        setMonthsTransactionData(month)
 //        transactionData.forEach { transaction ->
 //            Log.d("Transactions", transaction.toString())
 //        }
@@ -159,7 +166,7 @@ fun StatementsScreen(
                     containerColor = CustomColors.backgroundPrimaryTop,
                     titleContentColor = CustomColors.onPrimary,
                 ),
-                title = { Text("$displayMonth Statements") },
+                title = { Text("$displayMonth $displayYear Statements") },
                 actions = {
                     IconButton(onClick = { /* Handle menu click */ }) {
                         Icon(
@@ -211,24 +218,35 @@ fun StatementsScreen(
                                     tint = CustomColors.active
                                 )
                             }
+//                            MonthYearSelector(
+//                                initialDate = initialDate,
+//                                lastSupportedDate = lastSupportedDate,
+//                                onDateSelected = { selectedDate ->
+//                                    CoroutineScope(Dispatchers.Main).launch {
+//                                        println(
+//                                            "Selected date: ${
+//                                                selectedDate.format(
+//                                                    DateTimeFormatter.ofPattern("yyyy-MM")
+//                                                )
+//                                            }"
+//                                        )
+//                                        // Handle the selected date
+//                                        setMonthsTransactionData(
+//                                            selectedDate.format(
+//                                                DateTimeFormatter.ofPattern("yyyy-MM")
+//                                            )
+//                                        )
+//                                    }
+//                                }
+//                            )
                             MonthYearSelector(
-                                initialDate = initialDate,
+                                selectedDate = currentMonth,
                                 lastSupportedDate = lastSupportedDate,
-                                onDateSelected = { selectedDate ->
-                                    CoroutineScope(Dispatchers.Main).launch {
-                                        println(
-                                            "Selected date: ${
-                                                selectedDate.format(
-                                                    DateTimeFormatter.ofPattern("yyyy-MM")
-                                                )
-                                            }"
-                                        )
-                                        // Handle the selected date
-                                        setMonthsTransactionData(
-                                            selectedDate.format(
-                                                DateTimeFormatter.ofPattern("yyyy-MM")
-                                            )
-                                        )
+                                onDateSelected = { newDate ->
+                                    val formatted = newDate.format(DateTimeFormatter.ofPattern("yyyy-MM"))
+                                    currentMonth = newDate
+                                    scope.launch {
+                                        setMonthsTransactionData(formatted)
                                     }
                                 }
                             )

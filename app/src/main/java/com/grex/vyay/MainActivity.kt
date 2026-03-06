@@ -216,6 +216,7 @@ fun AppNavigation(
     }
 
     fun navigateToMonthlyStatement(yearMonth: String) {
+        Log.d("NavigateToMonthlyStatement: ", yearMonth)
         val route = Screen.Statements.createRoute(yearMonth)
         navController.navigate(route)
     }
